@@ -1,0 +1,17 @@
+
+[Unit]
+Description= Asset Management Server
+After=network.target
+
+[Service]
+Type=simple
+User=khoanguyen
+Group=khoanguyen
+Restart=on-failure
+RestartSec=10
+TimeoutSec=1200
+WorkingDirectory=/home/khoanguyen/asset-management/server/
+ExecStart=/usr/bin/npm run start
+
+[Install]
+WantedBy=multi-user.target

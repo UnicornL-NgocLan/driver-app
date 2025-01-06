@@ -1,0 +1,17 @@
+
+[Unit]
+Description= Asset Management Client
+After=network.target
+
+[Service]
+Type=simple
+User=khoanguyen
+Group=khoanguyen
+Restart=on-failure
+RestartSec=10
+TimeoutSec=1200
+WorkingDirectory=/home/khoanguyen/waiter-app-web-version/client/
+ExecStart=/usr/bin/npm run server
+
+[Install]
+WantedBy=multi-user.target

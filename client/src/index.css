@@ -1,0 +1,26 @@
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  box-sizing: border-box;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+.ant-table table { font-size: 12px; }
+.ant-pagination-simple-pager {font-size :12px;}
+.ant-pagination-simple-pager input {font-size :12px; padding:0}
+.ant-pagination.ant-pagination-mini.ant-table-pagination.ant-table-pagination-center.css-dev-only-do-not-override-1pg9a38.ant-pagination-simple {
+  margin:0;
+  margin-bottom: 1rem;
+}
+
+.ant-select-selection-item{
+  font-size: 13px;
+}
