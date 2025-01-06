@@ -8,11 +8,11 @@ export const createJWT = ({ payload }) => {
 export const attachCookiesToResponse = ({ res, data }) => {
   const accessTokenJWT = createJWT({ payload: data });
 
-  const oneHour = 1000 * 60 * 60;
+  const thirtyDays = 1000 * 60 * 60 * 24 * 30;
   res.cookie('stto', accessTokenJWT, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    expires: new Date(Date.now() + oneHour),
+    expires: new Date(Date.now() + thirtyDays),
     sign: true
   });
 };

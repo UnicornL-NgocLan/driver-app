@@ -1,4 +1,5 @@
 import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver} from "../utils/getOdooUserData.js"
+import {updateActualEndDate,doneTransportLine} from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
     getActiveTransport: async (req,res) => {
@@ -44,12 +45,25 @@ export const transportCtrl = {
     getAllSeaDriver: async (req,res) => {
         try {
             const {company_id} = req.query;
-            console.log(company_id)
             const data = await getAllSeaDriver(req.odoo,company_id);
             res.status(200).json({data})
         } catch (error) {
             console.log(error);
             res.status(500).json({ msg: error.message });
+        }
+    },
+
+    handleDoneTransportLine: async (req,res) => {
+        try {
+            const {id,date_end}  = req.body;
+            const updateData = {date_end_actual:date_end};
+            await updateActualEndDate(req.odoo,updateData,id);
+            await doneTransportLine(req.odoo,id);
+            res.status(200).json({data:"Cập nhật thành công!"})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message });
+            
         }
     }
 }

@@ -8,5 +8,6 @@ router.get("/get-active-transport",authenticateUser,transportCtrl.getActiveTrans
 router.get("/get-transport-line",authenticateUser,transportCtrl.getActiveTransportLine);
 router.get("/get-sea-driver",authenticateUser,transportCtrl.getSeaDriver);
 router.get("/get-all-sea-driver",authenticateUser,transportCtrl.getAllSeaDriver);
+router.patch("/update-sea-transport-line",authenticateUser,transportCtrl.handleDoneTransportLine);
 
 export default router.stack;

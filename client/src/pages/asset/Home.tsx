@@ -22,6 +22,8 @@ import 'dayjs/locale/vi';
 import BottomNavigator from '../../widgets/BottomNavigator'
 import SeaTransport from './components/SeaTransport'
 import { getDrivers } from '../../redux/reducers/driverReducer'
+import moment from 'moment'
+import { set } from 'lodash'
 
 
 
@@ -170,15 +172,28 @@ const Home = () => {
         setTime(dayjs(new Date()));
     };
 
-    const handleConfirmDeliveryTime = () => {
-        if(!date || !time){
-            alert("Vui lòng chọn thời điểm giao hàng");
-            return;
+    const handleConfirmDeliveryTime = async () => {
+        try {
+            if(!date || !time){
+                alert("Vui lòng chọn thời điểm giao hàng");
+                return;
+            }
+    
+            const dateTime = dayjs(`${date.format('YYYY-MM-DD')} ${time.format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
+            const substractedTime = moment(dateTime).subtract(7,'hours').format('YYYY-MM-DD HH:mm:ss');
+            setConfirmLoading(true);
+            if (open) {
+                await app.patch(`/api/update-sea-transport-line`,{id:open.id,date_end:substractedTime});
+                setLoading(true);
+                await handleFetchActiveTransportLines();
+            }
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message); 
+        } finally {
+            setConfirmLoading(false);
+            setOpen(false);
         }
-
-        const dateTime = dayjs(`${date.format('DD-MM-YYYY')} ${time.format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
-        console.log(dateTime)
-        // setConfirmLoading(true);
     };
 
     const handleCancel = () => {
@@ -248,7 +263,9 @@ const Home = () => {
             open={!!open}
             okButtonProps={{style:{background:myColor.buttonColor}}}
             cancelText="Hủy"
+            maskClosable={false}
             okText="Xác nhận"
+            closeIcon = {!confirmLoading}
             onOk={handleConfirmDeliveryTime}
             confirmLoading={confirmLoading}
             onCancel={handleCancel}
