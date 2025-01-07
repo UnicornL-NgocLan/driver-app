@@ -1,0 +1,38 @@
+services:
+  web:
+    build:
+      context: ../client
+    container_name: web-driver
+    restart: always
+    environment:
+      # - REACT_APP_SERVER_URI=http://103.161.22.196:3031/
+      - REACT_APP_SERVER_URI=http://127.0.0.1:3031/
+
+  server:
+    build:
+      context: ../server
+    container_name: server-driver
+    restart: always
+    environment:
+      - JWT_SECRET=538500420HFUE214B2POhf32819cvbw42492w_2hweYUwelooneer32329
+      - ODOO_URL=https://pilot.seateklab.vn
+      - ODOO_DB=opensea12pilot
+      - CRYPTO_KEY=5285029jfkfnwefrrweir3ifw19f3efcs368dsdasae24932k4343ppp
+      - IV=5a53oi45de9235nf2y423
+      - MONGO_URI=mongodb+srv://lanle:seatek@seatek.g7xiqoq.mongodb.net/?retryWrites=true&w=majority&appName=Seatek
+      - NODE_ENV=production
+
+  nginx:
+    image: nginx:latest
+    restart: always
+    container_name: nginx-driver
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/proxy.conf:/etc/nginx/proxy.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      #- ./nginx/ssl:/etc/ssl
+    depends_on:
+      - web
+      - server
+    ports:
+      - 3031:3031

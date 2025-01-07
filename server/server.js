@@ -20,18 +20,20 @@ app.use(cookieParser(process.env.JWT_SECRET));
 app.use(helmet());
 
 const whitelist = [
+  "http://127.0.0.1:3031",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5000",
   "http://localhost:3000",
   "http://localhost:5000",
   "http://localhost:3000/",
   "http://localhost:5000/",
-  "http://localhost:3030",
-  "http://localhost:3030/",
-  "http://103.161.22.196:3030",
-  "http://103.161.22.196:3030/",
-  "http://103.161.22.196:3030",
-  "http://103.161.22.196:3030/",
+  "http://localhost:3031",
+  "http://localhost:3031/",
+  "http://103.161.22.196:3031",
+  "http://103.161.22.196:3031/",
+  "http://103.161.22.196:3031",
+  "http://103.161.22.196:3031/",
   "https://qlts.seateklab.vn",
-  "https://qlts.seateklab.vn/",
 ];
 
 const isOriginAllowed = (origin) => {
