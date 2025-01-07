@@ -34,6 +34,7 @@ const whitelist = [
   "http://103.161.22.196:3031",
   "http://103.161.22.196:3031/",
   "https://logistics.dannygreen.vn",
+  "https://logistics.dannygreen.vn/"
 ];
 
 const isOriginAllowed = (origin) => {
