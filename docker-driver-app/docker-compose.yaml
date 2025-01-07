@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       # - REACT_APP_SERVER_URI=http://103.161.22.196:3031/
-      - REACT_APP_SERVER_URI=http://127.0.0.1:3031/
+      - REACT_APP_SERVER_URI=https://logistics.dannygreen.vn/
 
   server:
     build:
