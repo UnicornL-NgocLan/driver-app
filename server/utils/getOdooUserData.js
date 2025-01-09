@@ -130,7 +130,7 @@ export async function getAllSeaDriver(odoo,company_id) {
 export async function checkCurrentTransportLineIsDone(odoo,id) {
   return new Promise((resolve, reject) => {
       const inParams = [];
-      inParams.push([["id","=",parseInt(id)],["state","=","done"]]); 
+      inParams.push([["id","=",parseInt(id)],["state","in",["done","cancel"]]]); 
       inParams.push(["id"]); 
       inParams.push(0); 
       const params = [];
