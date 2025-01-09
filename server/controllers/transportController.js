@@ -1,4 +1,4 @@
-import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver} from "../utils/getOdooUserData.js"
+import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver,checkCurrentTransportLineIsDone} from "../utils/getOdooUserData.js"
 import {updateActualEndDate,doneTransportLine} from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
@@ -57,6 +57,8 @@ export const transportCtrl = {
         try {
             const {id,date_end}  = req.body;
             const updateData = {date_end_actual:date_end};
+            const result = await checkCurrentTransportLineIsDone(req.odoo,id);
+            if(result.length > 0) return res.status(400).json({msg:"Đơn hàng này đã có ai đó hoàn thành. Vui lòng tải lại trang!"})
             await updateActualEndDate(req.odoo,updateData,id);
             await doneTransportLine(req.odoo,id);
             res.status(200).json({data:"Cập nhật thành công!"})

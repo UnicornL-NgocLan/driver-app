@@ -242,7 +242,7 @@ const Home = () => {
                 <List
                     itemLayout="horizontal"
                     dataSource={activeTransportLines}
-                    renderItem={(item, index) => <TransportLine key={index} data={item} showTimePicker = {showModal}/>}
+                    renderItem={(item, index) => <TransportLine key={item.id} data={item} showTimePicker = {showModal}/>}
                 />
             </div>
             :
@@ -252,7 +252,7 @@ const Home = () => {
                 <List
                     itemLayout="horizontal"
                     dataSource={historyTransport}
-                    renderItem={(item, index) => <SeaTransport key={index} data={item}/>}
+                    renderItem={(item, index) => <SeaTransport key={item.id} data={item}/>}
                 />
             </div>
             :

@@ -127,3 +127,20 @@ export async function getAllSeaDriver(odoo,company_id) {
   });
 }
 
+export async function checkCurrentTransportLineIsDone(odoo,id) {
+  return new Promise((resolve, reject) => {
+      const inParams = [];
+      inParams.push([["id","=",parseInt(id)],["state","=","done"]]); 
+      inParams.push(["id"]); 
+      inParams.push(0); 
+      const params = [];
+      params.push(inParams);
+      odoo.execute_kw("sea.transport.line", 'search_read', params, (err, assets) => {
+          if (err) {
+          reject(err);
+          } else {
+          resolve(assets);
+          }
+      });
+  });
+}
