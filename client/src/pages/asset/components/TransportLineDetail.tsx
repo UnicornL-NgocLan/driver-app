@@ -44,10 +44,10 @@ const TransportLineDetail = ({transport,handleClose}:{transport:ITransport,handl
     <div style={{height:'100vh',overflow:'auto',position:'fixed',width:'100vw',backgroundColor:myColor.backgroundColor,top:0,left:0,zIndex:100}}>
         <div style={{
         position:'sticky',top:0, fontWeight:600, zIndex:1,backgroundColor:myColor.buttonColor,width:'100%', boxShadow:'2px 2px 2px rgba(0,0,0,0.2)'}}>
-          <div style = {{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1rem'}}>
-            <div style={{display:'flex',alignItems:'center',gap:8, padding:0}}>
-              <IoArrowBack style={{fontSize:19,color:'white'}} onClick={handleClose}/>
-              <span style={{fontSize:13, color:'white'}}>{transport.name}</span>
+          <div style = {{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'0.9rem 1rem'}}>
+            <div style={{display:'flex',alignItems:'center',gap:10, padding:0}}>
+              <IoArrowBack style={{fontSize:18,color:'white'}} onClick={handleClose}/>
+              <span style={{fontSize:15, color:'white'}}>{transport.name}</span>
             </div>
           </div>
       </div>
@@ -110,32 +110,32 @@ const TransportLineItem = ({data}:{data:ITransportLine}) => {
         style={{display:'block',background:'white',marginBottom:20,borderRadius:5, boxShadow:'2px 2px 1px rgba(0,0,0,0.2)',padding:10
         }}>
             <List.Item.Meta
-            title={<span style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:0, fontSize:13,fontWeight:700,color:getColor(data.state)}}><span>{data.name}</span><img alt="" src={getImage(data.state)} style={{height:17}}/></span>}
+            title={<span style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:0, fontSize:14,fontWeight:700,color:getColor(data.state)}}><span>{data.name}</span><img alt="" src={getImage(data.state)} style={{height:17}}/></span>}
             />
             <div style={{display:'flex',flexDirection:'column',gap:8}}>
-                {data.item_type && <span style={{fontSize:13, display:'flex', gap:10,alignItems:'center'}}>
-                    <img alt='' src={box} style={{height:14}}/>
-                    {data.item_type}
+                {data.item_type && <span style={{fontSize:14}}>
+                    {/* <img alt='' src={box} style={{height:14}}/> */}
+                    <span style={{fontWeight:500}}>Hàng hóa: </span><span>{data.item_type}</span>
                 </span>}
-                <span style={{fontSize:13, display:'flex', gap:10,alignItems:'center'}}>
-                    <img alt='' src={partner} style={{height:14}}/>
-                    {data.partner_id[1]}
+                <span style={{fontSize:14}}>
+                    {/* <img alt='' src={partner} style={{height:14}}/> */}
+                    <span style={{fontWeight:500}}>Đối tác: </span><span>{data.partner_id[1]}</span>
                 </span>
-                <span style={{fontSize:13, display:'flex', gap:10,alignItems:'center'}}>
-                    <img alt='' src={location} style={{height:14}}/>
-                    {data.address_start}
+                <span style={{fontSize:14}}>
+                    {/* <img alt='' src={location} style={{height:14}}/> */}
+                    <span style={{fontWeight:500}}>Từ: </span><span>{data.address_start}</span>
                 </span>
-                <span style={{fontSize:13, display:'flex', gap:10,alignItems:'center'}}>
-                    <img alt='' src={marker} style={{height:14}}/>
-                    {data.address_end}
+                <span style={{fontSize:14}}>
+                    {/* <img alt='' src={marker} style={{height:14}}/> */}
+                    <span style={{fontWeight:500}}>Đến: </span><span>{data.address_end}</span>
                 </span>
-                {data.date_end_actual && <span style={{fontSize:14, display:'flex', gap:10,alignItems:'center'}}>
-                    <img alt='' src={clock} style={{height:14}}/>
-                    {moment(data.date_end_actual).add(7,'hours').format('DD-MM-YYYY HH:mm:ss')}
+                {data.note && <span style={{fontSize:14}}>
+                    {/* <img alt='' src={pencil} style={{height:12}}/> */}
+                    <span style={{fontWeight:500}}>Ghi chú: </span><span>{data.note}</span>
                 </span>}
-                {data.note && <span style={{fontSize:13, display:'flex', gap:10,alignItems:'center'}}>
-                    <img alt='' src={pencil} style={{height:12}}/>
-                    {data.note}
+                {data.date_end_actual && <span style={{fontSize:14}}>
+                    {/* <img alt='' src={clock} style={{height:14}}/> */}
+                    <span style={{fontWeight:500}}>Giao lúc: </span><span>{moment(data.date_end_actual).add(7,'hours').format('DD-MM-YYYY HH:mm:ss')}</span>
                 </span>}
             </div>
         </List.Item>

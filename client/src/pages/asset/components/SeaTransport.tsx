@@ -18,7 +18,7 @@ const SeaTransport = ({data}:{data:ITransport}) => {
     const officeList = [...idList].map((id)=>{
         const transportDrivers = drivers.find((item: {id:number,name:string}) => item.id === id);
         if(!transportDrivers) return <></>
-        return <Tag style={{margin:0,fontSize:10,marginRight:5}} key={transportDrivers.id}>{transportDrivers?.name}</Tag>
+        return <Tag style={{margin:0,fontSize:13,marginRight:5}} key={transportDrivers.id}>{transportDrivers?.name}</Tag>
     })
 
     return officeList
@@ -61,17 +61,17 @@ const SeaTransport = ({data}:{data:ITransport}) => {
         style={{display:'block',background:'white',marginBottom:20,borderRadius:5, boxShadow:'2px 2px 1px rgba(0,0,0,0.2)',padding:10
         }}>
             <List.Item.Meta
-            title={<span style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:0, fontSize:13,fontWeight:700,color:getColor(data.state)}}><span>{data.name}</span><img alt="" src={getImage(data.state)} style={{height:18}}/></span>}
+            title={<span style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:0, fontSize:14,fontWeight:700,color:getColor(data.state)}}><span>{data.name}</span><img alt="" src={getImage(data.state)} style={{height:18}}/></span>}
             />
             <div style={{display:'flex',flexDirection:'column',gap:8}}> 
-              <span style={{fontSize:13}}>
+              <span style={{fontSize:14}}>
                     <span style={{fontWeight:600}}>Tài xế: </span> {handleShowDrivers(data.sea_driver_id)}
                 </span>
-                <span style={{fontSize:13,}}>
+                <span style={{fontSize:14}}>
                     <span style={{fontWeight:600}}>Phương tiện: </span>{data.vehicle_id[1]}
                 </span>
-                <span style={{fontSize:13}}>
-                    <span style={{fontWeight:600}}>Ngày khởi hành: </span>{moment(data.date_start_actual).add(7,'hours').format('DD-MM-YYYY hh:mm:ss')}
+                <span style={{fontSize:14}}>
+                    <span style={{fontWeight:600}}>Khởi hành lúc: </span>{moment(data.date_start_actual).add(7,'hours').format('DD-MM-YYYY HH:mm:ss')}
                 </span>
             </div>
       </List.Item>

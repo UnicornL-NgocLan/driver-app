@@ -58,7 +58,7 @@ export const transportCtrl = {
             const {id,date_end}  = req.body;
             const updateData = {date_end_actual:date_end};
             const result = await checkCurrentTransportLineIsDone(req.odoo,id);
-            if(result.length > 0) return res.status(400).json({msg:"Đơn hàng này đã có ai đó hoàn thành. Vui lòng tải lại trang!"})
+            if(result.length > 0) return res.status(400).json({msg:"Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!"})
             await updateActualEndDate(req.odoo,updateData,id);
             await doneTransportLine(req.odoo,id);
             res.status(200).json({data:"Cập nhật thành công!"})

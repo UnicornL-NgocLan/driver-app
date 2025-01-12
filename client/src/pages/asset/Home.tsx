@@ -23,7 +23,6 @@ import BottomNavigator from '../../widgets/BottomNavigator'
 import SeaTransport from './components/SeaTransport'
 import { getDrivers } from '../../redux/reducers/driverReducer'
 import moment from 'moment'
-import { set } from 'lodash'
 
 
 
@@ -263,6 +262,7 @@ const Home = () => {
             open={!!open}
             okButtonProps={{style:{background:myColor.buttonColor}}}
             cancelText="Hủy"
+            centered
             maskClosable={false}
             okText="Xác nhận"
             closeIcon = {!confirmLoading}

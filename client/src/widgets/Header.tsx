@@ -1,6 +1,5 @@
 import { myColor } from 'color';
 import { useEffect,useState } from 'react';
-import {Form } from 'antd';
 import { FaBuilding } from "react-icons/fa";
 import {useDispatch, useSelector} from 'react-redux';
 import { RootState } from 'redux/store';
@@ -13,7 +12,6 @@ import { Dropdown } from 'antd';
 import { FaCaretDown } from "react-icons/fa";
 import type { SelectProps } from 'antd';
 import app from 'axiosConfig';
-import _ from 'lodash';
 
 export interface DebounceSelectProps<ValueType = any>
   extends Omit<SelectProps<ValueType | ValueType[]>, 'options' | 'children'> {
@@ -29,8 +27,6 @@ const Header = ({handleChangeCompany}:{handleChangeCompany:(i:number)=>void}) =>
     const auth = useSelector((state: RootState) => state.auth) as any;
 
     const [myCurrentCompanyShortName,setMyCurrentCompanyShortName] = useState<string>('');
-    const [form] = Form.useForm();
-
 
     const getMyCurrentCompanyShortName = () => {
         if(companies.length>0){
@@ -63,15 +59,15 @@ const Header = ({handleChangeCompany}:{handleChangeCompany:(i:number)=>void}) =>
 
     const items: MenuProps['items'] = [
       {
-        label: <span style={{fontSize:14}}>Đổi công ty</span>,
+        label: <span style={{fontSize:15}}>Đổi công ty</span>,
         key: '1',
-        icon: <FaExchangeAlt/>,
+        icon: <FaExchangeAlt style={{fontSize:16}}/>,
         onClick: () => handleOpenCompanySelection()
       },
       {
-        label: <span style={{color:'red',fontSize:14}}>Đăng xuất</span>,
+        label: <span style={{color:'red',fontSize:15}}>Đăng xuất</span>,
         key: '2',
-        icon: <GrLogout style={{color:'red'}}/>,
+        icon: <GrLogout style={{color:'red',fontSize:16}}/>,
         onClick: () => handleLogout()
       },
     ];
@@ -86,12 +82,12 @@ const Header = ({handleChangeCompany}:{handleChangeCompany:(i:number)=>void}) =>
         position:'sticky',top:0, zIndex:1,backgroundColor:myColor.buttonColor,width:'100%', boxShadow:'2px 2px 2px rgba(0,0,0,0.2)'}}>
           <div style = {{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'1rem'}}>
             <div style={{display:'flex',alignItems:'center',gap:8, padding:0}}>
-              <FaBuilding style={{fontSize:14,color:'white'}}/>
-              <span style={{fontSize:14, color:'white',fontWeight:600}}>{myCurrentCompanyShortName}</span>
+              <FaBuilding style={{fontSize:18,color:'white'}}/>
+              <span style={{fontSize:15, color:'white',fontWeight:600}}>{myCurrentCompanyShortName}</span>
             </div>
             <Dropdown menu={{ items }} placement="bottomRight" arrow>
               <div style={{display:'flex',alignItems:'center',gap:5}}>
-                  <span style={{color:'white',fontSize:14,fontWeight:600}}>{auth?.name}</span>
+                  <span style={{color:'white',fontSize:15,fontWeight:600}}>{auth?.name}</span>
                   <FaCaretDown style={{fontSize:16,color:'white'}}/>
               </div>  
             </Dropdown>
