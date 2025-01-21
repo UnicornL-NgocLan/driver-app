@@ -40,6 +40,7 @@ const Home = () => {
     const [date, setDate] = useState(dayjs(new Date()));
     const [time, setTime] = useState(dayjs(new Date()));
     const [defaultIndex,setDefaultIndex] = useState(0);
+    const [driver,setDriver] = useState<number | null>(null);
 
     dayjs.locale('vi');
 
@@ -82,7 +83,6 @@ const Home = () => {
 
     const handleFetchActiveTransportLines = async (driver_id?:number) => {
         try {
-            setActiveTransportLines([]);
             if(auth && auth.partner_id){
                 const {data} = await app.get(`/api/get-active-transport?id=${auth.driver || driver_id}&company_id=${auth.company_id[0]}`);
                 if(data?.data && data?.data.length > 0){
@@ -156,6 +156,7 @@ const Home = () => {
                 handleFetchAllDrivers()
             ])
             const driver_id = await handleGetSeaDriver();
+            setDriver(driver_id);
             await handleFetchActiveTransportLines(driver_id);
         } catch (error) {
             const message = getErrorMessage(error);
@@ -220,6 +221,16 @@ const Home = () => {
         };
         fetchAllNecessaryData();
     },[]);
+
+    useEffect(()=>{
+        let interval = setInterval(() => {
+            if(defaultIndex === 0 && driver){
+                handleFetchActiveTransportLines(driver);
+            }
+        },1000 * 60)
+
+        return () => clearInterval(interval)
+    },[defaultIndex,driver])
 
     if(fetchData){
         return <PageLoading/>
