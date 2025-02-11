@@ -1,5 +1,5 @@
-import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver,checkCurrentTransportLineIsDone} from "../utils/getOdooUserData.js"
-import {updateActualEndDate,doneTransportLine} from "../utils/updateOdooUserData.js"
+import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver,checkCurrentTransportLineIsDone,checkCurrentTransportLineIsReady} from "../utils/getOdooUserData.js"
+import {updateActualEndDate,doneTransportLine,cancelTransportLine} from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
     getActiveTransport: async (req,res) => {
@@ -67,5 +67,20 @@ export const transportCtrl = {
             res.status(500).json({ msg: error.message });
             
         }
-    }
+    },
+
+    handleCancelTransportLine: async (req,res) => {
+        try {
+            const {id}  = req.body;
+            const result = await checkCurrentTransportLineIsReady(req.odoo,id);
+            if(result.length > 0) return res.status(400).json({msg:"Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!"})
+            await cancelTransportLine(req.odoo,id);
+            res.status(200).json({data:"Cập nhật thành công!"})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message });
+            
+        }
+    },
+
 }

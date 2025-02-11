@@ -47,3 +47,18 @@ export async function doneTransportLine(odoo, uid) {
         });
     });
 }
+
+
+export async function cancelTransportLine(odoo, uid) {
+    return new Promise((resolve, reject) => {
+        let params = [];
+        params.push([parseInt(uid)]);
+        odoo.execute_kw("sea.transport.line", "cancel_transport_line", params, function (err, user) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(user);
+            }
+        });
+    });
+}

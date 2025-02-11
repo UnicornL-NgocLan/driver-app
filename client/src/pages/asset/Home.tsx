@@ -91,6 +91,8 @@ const Home = () => {
                     })
                     const results = await Promise.all([...transportLines]);
                     setActiveTransportLines(results[0]?.data?.data);
+                }else {
+                    setActiveTransportLines([]);
                 }
             }
         } catch (error) {
@@ -211,6 +213,21 @@ const Home = () => {
         }
     }
 
+    const handleCancelOrder = async (data:ITransportLine) => {
+        try {
+            if(window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")){
+                setLoading(true);
+                await app.patch(`/api/cancel-sea-transport-line`,{id:data.id});
+                await handleFetchActiveTransportLines();
+            }
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message); 
+        } finally {
+            setLoading(false);
+        }
+    }
+
     useEffect(()=>{
         if(companies.length > 0){
             const timemout = setTimeout(() => {
@@ -252,7 +269,7 @@ const Home = () => {
                 <List
                     itemLayout="horizontal"
                     dataSource={activeTransportLines}
-                    renderItem={(item, index) => <TransportLine key={item.id} data={item} showTimePicker = {showModal}/>}
+                    renderItem={(item, index) => <TransportLine key={item.id} data={item} showTimePicker = {showModal} handleCancelOrder ={handleCancelOrder}/>}
                 />
             </div>
             :
