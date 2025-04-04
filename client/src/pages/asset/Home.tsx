@@ -8,12 +8,16 @@ import { addAuth, addDriver } from '../../redux/reducers/authReducer'
 import app from 'axiosConfig'
 import Header from '../../widgets/Header'
 
+import red from '../../images/round.png'
+import blue from '../../images/record.png'
+import yellow from '../../images/circle.png'
+
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import Empty from 'widgets/Empty'
 import { ConfigProvider, DatePicker, List, Modal, TimePicker } from 'antd'
 import TransportLine from './components/TransportLine'
-import { ITransport, ITransportLine } from 'interface'
+import { ITransport, ITransportLine, IVehicle } from 'interface'
 import locale from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
@@ -23,7 +27,17 @@ import BottomNavigator from '../../widgets/BottomNavigator'
 import SeaTransport from './components/SeaTransport'
 import { getDrivers } from '../../redux/reducers/driverReducer'
 import moment from 'moment'
+import ReminderLine from './components/ReminderLine'
+import VehicleList from './components/VehicleList'
 
+
+const reminderList: any[] = [
+    {id:1,name:'Bảo trì bộ phận đánh lửa dưới gầm sau mỗi 5000 km',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 1',state:"due_soon",currentOdometer:28000},
+    {id:2,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 2',state:"overdue",currentOdometer:32000},
+    {id:3,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 3',state:"active",currentOdometer:35000},
+    {id:4,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 4',state:"due",currentOdometer:29000},
+    {id:5,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 5',state:"cancel",currentOdometer:31000},
+]
 
 
 const Home = () => {
@@ -41,6 +55,7 @@ const Home = () => {
     const [time, setTime] = useState(dayjs(new Date()));
     const [defaultIndex,setDefaultIndex] = useState(0);
     const [driver,setDriver] = useState<number | null>(null);
+    const [vehicleList,setVehicleList] = useState<IVehicle[]>([]);
 
     dayjs.locale('vi');
 
@@ -133,6 +148,24 @@ const Home = () => {
         }
     }
 
+    const handleFetchVehicle = async () => {
+        try {
+            setVehicleList([]);
+            if(auth && auth.driver){
+                const {data} = await app.get(`/api/get-vehicle-list?company_id=${auth.company_id[0]}`);
+                if(data?.data){
+                    setVehicleList(data.data);
+                }
+            }
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+            setFetchData(false);
+        } finally {
+            setLoading(false);
+        }
+    }
+
     const handleGetSeaDriver = async () => {
         try {
             if(auth && auth.partner_id){
@@ -207,9 +240,12 @@ const Home = () => {
         if(i === 0){
             setLoading(true);
             await handleFetchActiveTransportLines();
-        } else {
+        } else if(i === 1){ 
             setLoading(true);
             await handleFetchTransport();
+        } else {
+            setLoading(true);
+            await handleFetchVehicle();
         }
     }
 
@@ -280,6 +316,30 @@ const Home = () => {
                     itemLayout="horizontal"
                     dataSource={historyTransport}
                     renderItem={(item, index) => <SeaTransport key={item.id} data={item}/>}
+                />
+            </div>
+            :
+            defaultIndex === 2 && vehicleList.length > 0
+            ?
+            <div style={{padding:'1rem 1rem 55px'}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:10,paddingTop:0,paddingBottom:15}}>
+                    <div style={{display:'flex',alignItems:'center',gap:5}}>
+                        <img src={yellow} alt="" style={{height:12,width:12}}/>
+                        <span style={{fontSize:14}}>Sắp đến hạn</span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:5}}>
+                        <img src={blue} alt="" style={{height:12,width:12}}/>
+                        <span style={{fontSize:14}}>Đến hạn</span>
+                    </div>
+                    <div style={{display:'flex',alignItems:'center',gap:5}}>
+                        <img src={red} alt="" style={{height:12,width:12}}/>
+                        <span style={{fontSize:14}}>Quá hạn</span>
+                    </div>
+                </div>
+                <List
+                    itemLayout="horizontal"
+                    dataSource={vehicleList}
+                    renderItem={(item, index) => <VehicleList key={item.id} data={item}/>}
                 />
             </div>
             :

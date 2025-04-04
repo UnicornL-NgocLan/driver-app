@@ -1,4 +1,4 @@
-import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver,checkCurrentTransportLineIsDone,checkCurrentTransportLineIsReady} from "../utils/getOdooUserData.js"
+import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver,getAllVehicles, checkCurrentTransportLineIsDone,checkCurrentTransportLineIsReady} from "../utils/getOdooUserData.js"
 import {updateActualEndDate,doneTransportLine,cancelTransportLine} from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
@@ -83,4 +83,14 @@ export const transportCtrl = {
         }
     },
 
+    getAllVehicles: async (req,res) => {
+        try {
+            const {company_id} = req.query;
+            const data = await getAllVehicles(req.odoo,company_id);
+            res.status(200).json({data})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
 }

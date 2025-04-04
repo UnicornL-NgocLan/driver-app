@@ -162,3 +162,23 @@ export async function checkCurrentTransportLineIsReady(odoo,id) {
       });
   });
 }
+
+
+export async function getAllVehicles(odoo,company_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+      inParams.push([["active","=",true],]); 
+      inParams.push(["license_plate","brand_id","odometer","is_on_mission","image"]); 
+      inParams.push(0); 
+      const params = [];
+      params.push(inParams);
+      odoo.execute_kw("fleet.vehicle", 'search_read', params, (err, assets) => {
+          if (err) {
+          reject(err);
+          } else {
+          resolve(assets);
+          }
+      });
+  });
+}
+

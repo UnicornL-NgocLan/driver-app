@@ -25,3 +25,12 @@ export interface ITransport {
     date_start_actual:string,
     sea_driver_id:any,
 }
+
+export interface IVehicle {
+    id:number,
+    license_plate: string,
+    brand_id: any,
+    odometer: number,
+    is_on_mission:boolean,
+    image:string,
+}
