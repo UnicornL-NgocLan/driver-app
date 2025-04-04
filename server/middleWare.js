@@ -45,3 +45,23 @@ export const authenticateUser = async (req, res, next) => {
     res.status(500).json({msg: err.message});
   }
 }
+
+export const otherUserAuthorize  = async (req, res, next) => {
+  try {
+      const odoo = new Odoo({ url: process.env.ODOO_URL, db: process.env.ODOO_DB, username: "logistic_service", password: "1"});
+      const uid = new Promise((resolve, reject) => {
+          odoo.connect((err, uid) => {
+          if (err) return res.status(403).json({ msg: 'Kết nối thất bại! Tên đăng nhập hoặc mật khẩu không đúng' });
+          return resolve(uid)
+          });
+      })
+
+      const isConnected = await Promise.all([uid]);
+      if (isConnected.includes(undefined)) return res.status(403).json({ msg: 'Kết nối với Odoo gặp trục trặc. Xin liên hệ với nhà phát triển'});
+      req.odoo = odoo;
+      return next();
+  }
+   catch (err) {
+    res.status(500).json({msg: err.message});
+  }
+}
