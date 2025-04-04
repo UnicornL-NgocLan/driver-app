@@ -48,7 +48,7 @@ export const authenticateUser = async (req, res, next) => {
 
 export const otherUserAuthorize  = async (req, res, next) => {
   try {
-      const odoo = new Odoo({ url: process.env.ODOO_URL, db: process.env.ODOO_DB, username: "logistic_service", password: "1"});
+      const odoo = new Odoo({ url: process.env.ODOO_URL, db: process.env.ODOO_DB, username: "logistic_service", password: "magicWizard"});
       const uid = new Promise((resolve, reject) => {
           odoo.connect((err, uid) => {
           if (err) return res.status(403).json({ msg: 'Kết nối thất bại! Tên đăng nhập hoặc mật khẩu không đúng' });
