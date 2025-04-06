@@ -63,7 +63,7 @@ const SeaTransport = ({data}:{data:ITransport}) => {
             <List.Item.Meta
             title={<span style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:0, fontSize:14,fontWeight:700,color:getColor(data.state)}}><span>{data.name}</span><img alt="" src={getImage(data.state)} style={{height:18}}/></span>}
             />
-            <div style={{display:'flex',flexDirection:'column',gap:8}}> 
+            <div style={{display:'flex',flexDirection:'column',gap:8, marginTop:4}}> 
               <span style={{fontSize:14}}>
                     <span style={{fontWeight:600}}>Tài xế: </span> {handleShowDrivers(data.sea_driver_id)}
                 </span>

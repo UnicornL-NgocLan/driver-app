@@ -22,5 +22,24 @@ code {
 }
 
 .ant-select-selection-item{
-  font-size: 13px;
+  font-size: 14px;
+}
+
+.reminder-table td.ant-table-cell {
+  padding:1rem 0.4rem !important; 
+  font-size:14px;
+}
+
+.reminder-table th.ant-table-cell {
+  padding:1rem 0.4rem !important; 
+  font-size:14px;
+  background:#f2f2f2 !important;
+}
+
+.reminder-table .ant-tag {
+  margin:0;
+}
+
+.ant-list-item-meta-title{
+  margin:0rem 0 8px;
 }

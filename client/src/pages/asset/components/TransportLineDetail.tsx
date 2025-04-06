@@ -112,29 +112,23 @@ const TransportLineItem = ({data}:{data:ITransportLine}) => {
             <List.Item.Meta
             title={<span style={{display:'flex',justifyContent:'space-between',alignItems:'center',margin:0, fontSize:14,fontWeight:700,color:getColor(data.state)}}><span>{data.name}</span><img alt="" src={getImage(data.state)} style={{height:17}}/></span>}
             />
-            <div style={{display:'flex',flexDirection:'column',gap:8}}>
+            <div style={{display:'flex',flexDirection:'column',gap:8,marginTop:4}}>
                 {data.item_type && <span style={{fontSize:14}}>
-                    {/* <img alt='' src={box} style={{height:14}}/> */}
                     <span style={{fontWeight:500}}>Hàng hóa: </span><span>{data.item_type}</span>
                 </span>}
                 <span style={{fontSize:14}}>
-                    {/* <img alt='' src={partner} style={{height:14}}/> */}
                     <span style={{fontWeight:500}}>Đối tác: </span><span>{data.partner_id[1]}</span>
                 </span>
                 <span style={{fontSize:14}}>
-                    {/* <img alt='' src={location} style={{height:14}}/> */}
                     <span style={{fontWeight:500}}>Từ: </span><span>{data.address_start}</span>
                 </span>
                 <span style={{fontSize:14}}>
-                    {/* <img alt='' src={marker} style={{height:14}}/> */}
                     <span style={{fontWeight:500}}>Đến: </span><span>{data.address_end}</span>
                 </span>
                 {data.note && <span style={{fontSize:14}}>
-                    {/* <img alt='' src={pencil} style={{height:12}}/> */}
                     <span style={{fontWeight:500}}>Ghi chú: </span><span>{data.note}</span>
                 </span>}
                 {data.date_end_actual && <span style={{fontSize:14}}>
-                    {/* <img alt='' src={clock} style={{height:14}}/> */}
                     <span style={{fontWeight:500}}>Giao lúc: </span><span>{moment(data.date_end_actual).add(7,'hours').format('DD-MM-YYYY HH:mm:ss')}</span>
                 </span>}
             </div>

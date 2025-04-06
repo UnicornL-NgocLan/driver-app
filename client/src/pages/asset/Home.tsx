@@ -21,23 +21,29 @@ import { ITransport, ITransportLine, IVehicle } from 'interface'
 import locale from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-
-
+import {
+    DndContext, 
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    TouchSensor,
+    MouseSensor,
+  } from '@dnd-kit/core';
+  import {
+    arrayMove,
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+  } from '@dnd-kit/sortable';
+  import { CSS } from "@dnd-kit/utilities";
+  import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import BottomNavigator from '../../widgets/BottomNavigator'
 import SeaTransport from './components/SeaTransport'
 import { getDrivers } from '../../redux/reducers/driverReducer'
 import moment from 'moment'
-import ReminderLine from './components/ReminderLine'
 import VehicleList from './components/VehicleList'
-
-
-const reminderList: any[] = [
-    {id:1,name:'Bảo trì bộ phận đánh lửa dưới gầm sau mỗi 5000 km',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 1',state:"due_soon",currentOdometer:28000},
-    {id:2,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 2',state:"overdue",currentOdometer:32000},
-    {id:3,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 3',state:"active",currentOdometer:35000},
-    {id:4,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 4',state:"due",currentOdometer:29000},
-    {id:5,name:'Bảo trì xe',due_odometer:30000,task:'Bảo trì xe',vehicle:'Xe tải 5',state:"cancel",currentOdometer:31000},
-]
 
 
 const Home = () => {
@@ -48,6 +54,8 @@ const Home = () => {
     const [historyTransport,setHistoryTransport] = useState<ITransport[]>([]);
     const companies = useSelector((state) => (state as any).companies);
     const auth = useSelector((state) => (state as any).auth);
+    const [items, setItems] = useState<any>([]);
+    const [isDragging, setIsDragging] = useState(false);
 
     const [open, setOpen] = useState<ITransportLine | false>(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
@@ -58,6 +66,22 @@ const Home = () => {
     const [vehicleList,setVehicleList] = useState<IVehicle[]>([]);
 
     dayjs.locale('vi');
+
+    const sensors = useSensors(
+        useSensor(MouseSensor, {
+            // Require the mouse to move by 10 pixels before activating
+            activationConstraint: {
+              distance: 10,
+            },
+          }),
+          useSensor(TouchSensor, {
+            // Press delay of 250ms, with tolerance of 5px of movement
+            activationConstraint: {
+              delay: 250,
+              tolerance: 5,
+            },
+          }),
+      );
 
     const fetchCompanies = async () => {
         try {
@@ -264,6 +288,18 @@ const Home = () => {
         }
     }
 
+    const handleDragEnd = async (event:any) => {
+        const {active, over} = event;   
+        if (active.id !== over.id) {
+            const oldIndex = [...activeTransportLines].map(i => i.id).indexOf(active.id);
+            const newIndex = [...activeTransportLines].map(i => i.id).indexOf(over.id);
+            const newOrder = arrayMove([...activeTransportLines], oldIndex, newIndex);
+            setActiveTransportLines(newOrder);
+        }
+        setIsDragging(false);
+        await handleFetchActiveTransportLines();
+    }
+
     useEffect(()=>{
         if(companies.length > 0){
             const timemout = setTimeout(() => {
@@ -277,14 +313,14 @@ const Home = () => {
 
     useEffect(()=>{
         let interval = setInterval(() => {
-            if(defaultIndex === 0 && driver){
+            if(defaultIndex === 0 && driver && !isDragging){
                 handleFetchActiveTransportLines(driver);
             }
         },1000 * 60)
 
         return () => clearInterval(interval)
     },[defaultIndex,driver])
-
+     
     if(fetchData){
         return <PageLoading/>
     }
@@ -302,11 +338,30 @@ const Home = () => {
             defaultIndex === 0 && activeTransportLines.length > 0
             ?
             <div style={{padding:'1rem 1rem 55px'}}>
-                <List
-                    itemLayout="horizontal"
-                    dataSource={activeTransportLines}
-                    renderItem={(item, index) => <TransportLine key={item.id} data={item} showTimePicker = {showModal} handleCancelOrder ={handleCancelOrder}/>}
-                />
+                <DndContext 
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+                onDragStart={() => setIsDragging(true)}
+                modifiers={[restrictToVerticalAxis]}
+                >
+                    <SortableContext
+                    items={activeTransportLines.map((item:ITransportLine) => item.id)}
+                    strategy={verticalListSortingStrategy}
+                    >
+                    {activeTransportLines.map((line:ITransportLine) => {
+                        return (
+                        <SortableItem
+                            key={line.id}
+                            id={line.id}
+                            data={line}
+                            showTimePicker={showModal}
+                            handleCancelOrder={handleCancelOrder}
+                        />
+                        );
+                    })}
+                    </SortableContext>
+                </DndContext>
             </div>
             :
             defaultIndex === 1 && historyTransport.length > 0 
@@ -390,3 +445,26 @@ const Home = () => {
 }
 
 export default Home
+
+
+const SortableItem = ({ id, data, showTimePicker, handleCancelOrder }: any) => {
+    const {
+      attributes,
+      listeners,
+      setNodeRef,
+      transform,
+      transition,
+    } = useSortable({ id });
+  
+    const style = {
+      transform: CSS.Transform.toString(transform),
+      transition,
+      width: '100%',
+    };
+  
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+        <TransportLine key={data.id} data={data} showTimePicker={showTimePicker} handleCancelOrder={handleCancelOrder} />
+      </div>
+    );
+  };
