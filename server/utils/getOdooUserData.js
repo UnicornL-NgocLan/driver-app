@@ -36,7 +36,8 @@ export async function getAllActiveTransport(odoo,company_id) {
       inParams.push([
         "id","name","state","vehicle_id","date_start_actual","sea_driver_id"
       ]); 
-      inParams.push(0); 
+      inParams.push(0); //offset
+      inParams.push(1); //limit
       const params = [];
       params.push(inParams);
       odoo.execute_kw("sea.transport", 'search_read', params, (err, assets) => {
