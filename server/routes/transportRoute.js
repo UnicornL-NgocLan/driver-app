@@ -11,5 +11,6 @@ router.get("/get-all-sea-driver",authenticateUser,transportCtrl.getAllSeaDriver)
 router.patch("/update-sea-transport-line",authenticateUser,otherUserAuthorize,transportCtrl.handleDoneTransportLine);
 router.patch("/cancel-sea-transport-line",authenticateUser,otherUserAuthorize,transportCtrl.handleCancelTransportLine);
 router.get("/get-vehicle-list",authenticateUser,otherUserAuthorize,transportCtrl.getAllVehicles);
+router.patch("/update-sequence-sea-transport-line",authenticateUser,otherUserAuthorize,transportCtrl.updateSequenceTransportLine);
 
 export default router.stack;

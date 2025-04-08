@@ -289,15 +289,25 @@ const Home = () => {
     }
 
     const handleDragEnd = async (event:any) => {
-        const {active, over} = event;   
-        if (active.id !== over.id) {
-            const oldIndex = [...activeTransportLines].map(i => i.id).indexOf(active.id);
-            const newIndex = [...activeTransportLines].map(i => i.id).indexOf(over.id);
-            const newOrder = arrayMove([...activeTransportLines], oldIndex, newIndex);
-            setActiveTransportLines(newOrder);
+        try {
+            const {active, over} = event;   
+            if (active.id !== over.id) {
+                const oldIndex = [...activeTransportLines].map(i => i.id).indexOf(active.id);
+                const newIndex = [...activeTransportLines].map(i => i.id).indexOf(over.id);
+                const newOrder = arrayMove([...activeTransportLines], oldIndex, newIndex);
+                setActiveTransportLines(newOrder);
+                await app.patch(`/api/update-sequence-sea-transport-line`,{
+                    lines:[...newOrder].map((line:ITransportLine) => ({id:line.id})),
+                    transportId: newOrder[0].transport_id,
+                });
+                await handleFetchActiveTransportLines();
+            }
+
+            setIsDragging(false);
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message); 
         }
-        setIsDragging(false);
-        await handleFetchActiveTransportLines();
     }
 
     useEffect(()=>{
@@ -353,8 +363,8 @@ const Home = () => {
                         return (
                         <SortableItem
                             key={line.id}
-                            id={line.id}
                             data={line}
+                            isDragging ={isDragging}
                             showTimePicker={showModal}
                             handleCancelOrder={handleCancelOrder}
                         />
@@ -447,14 +457,14 @@ const Home = () => {
 export default Home
 
 
-const SortableItem = ({ id, data, showTimePicker, handleCancelOrder }: any) => {
+const SortableItem = ({isDragging, data, showTimePicker, handleCancelOrder }: {data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,isDragging:boolean}) => {
     const {
       attributes,
       listeners,
       setNodeRef,
       transform,
       transition,
-    } = useSortable({ id });
+    } = useSortable({ id: data.id });
   
     const style = {
       transform: CSS.Transform.toString(transform),
@@ -464,7 +474,12 @@ const SortableItem = ({ id, data, showTimePicker, handleCancelOrder }: any) => {
   
     return (
       <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-        <TransportLine key={data.id} data={data} showTimePicker={showTimePicker} handleCancelOrder={handleCancelOrder} />
+        <TransportLine 
+            isDragging = {isDragging}
+            key={data.id} 
+            data={data} 
+            showTimePicker={showTimePicker} 
+            handleCancelOrder={handleCancelOrder} />
       </div>
     );
   };

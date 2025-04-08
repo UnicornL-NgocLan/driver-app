@@ -1,5 +1,20 @@
-import {getAllActiveTransport, getSeaDriver,getAllTransportLine,getAllMyTransports, getAllSeaDriver,getAllVehicles, checkCurrentTransportLineIsDone,checkCurrentTransportLineIsReady} from "../utils/getOdooUserData.js"
-import {updateActualEndDate,doneTransportLine,cancelTransportLine} from "../utils/updateOdooUserData.js"
+import {
+    getAllActiveTransport, 
+    getSeaDriver,
+    getAllTransportLine,
+    getAllMyTransports, 
+    getAllSeaDriver,
+    getAllVehicles, 
+    checkCurrentTransportLineIsDone,
+    checkCurrentTransportLineIsReady,
+    getAllTransportLineJustStateAndSequence,
+} from "../utils/getOdooUserData.js"
+import {
+    updateActualEndDate,
+    doneTransportLine,
+    cancelTransportLine,
+    updateSequenceAndStatusTransportLine
+} from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
     getActiveTransport: async (req,res) => {
@@ -93,4 +108,34 @@ export const transportCtrl = {
             res.status(500).json({ msg: error.message });
         }
     },
+
+    updateSequenceTransportLine: async (req,res) => {
+        try {
+            const {lines,transportId} = req.body;
+            if(lines.length === 0) return res.status(400).json({msg:"Không có dữ liệu để cập nhật thứ tự!"});
+            const allTransportLines = await getAllTransportLineJustStateAndSequence(req.odoo,transportId[0]);
+            const getAllDoneCancelLines = [...allTransportLines].filter(item => item.state === "done" || item.state === "cancel");
+            const stateLines = [...lines].map((item) => {
+                return {id: item.id,}
+            });
+
+            const finalLines = [...getAllDoneCancelLines,...stateLines].map((line,index) => {
+                return {
+                    id: line.id,
+                    sequence:index,
+                }
+            })
+            for (const line of finalLines) {
+                await updateSequenceAndStatusTransportLine(
+                    req.odoo,
+                    {sequence:line.sequence},
+                    line.id
+                );
+            }
+            res.status(200).json({msg:"Cập nhật thành công!"})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message });
+        }
+    }
 }

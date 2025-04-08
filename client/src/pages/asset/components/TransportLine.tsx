@@ -3,7 +3,7 @@ import { ITransportLine } from 'interface'
 import { myColor } from 'color'
 
 
-const TransportLine = ({data,showTimePicker,handleCancelOrder}:{data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void}) => {
+const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder}:{data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,isDragging:boolean}) => {
   return (
         <List.Item 
             style={{
@@ -29,13 +29,15 @@ const TransportLine = ({data,showTimePicker,handleCancelOrder}:{data:ITransportL
                         <span style={{fontWeight:500}}>Ghi chú: </span><span>{data.note}</span>
                     </span>}
                     {data.state === 'start' && <Button 
+                    disabled={isDragging}
                     onClick={() => showTimePicker(data)}
-                    color="default" variant="solid" style={{background:myColor.buttonColor, fontWeight:500}}>
+                    color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.buttonColor, fontWeight:500}}>
                         Giao hàng
                     </Button>}
                     {data.state === 'ready' && <Button 
+                    disabled={isDragging}
                     onClick={() => handleCancelOrder(data)}
-                    color="default" variant="solid" style={{background:myColor.dangerColor, fontWeight:500}}>
+                    color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.dangerColor, fontWeight:500}}>
                         Hủy đơn
                     </Button>}
                 </div>

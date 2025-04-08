@@ -92,6 +92,24 @@ export async function getAllTransportLine(odoo,id,getAll=false) {
   });
 }
 
+export async function getAllTransportLineJustStateAndSequence(odoo,id) {
+  return new Promise((resolve, reject) => {
+      const inParams = [];
+      inParams.push([["transport_id","=",parseInt(id)]]); 
+      inParams.push(["id","sequence","state"]); 
+      inParams.push(0); 
+      const params = [];
+      params.push(inParams);
+      odoo.execute_kw("sea.transport.line", 'search_read', params, (err, assets) => {
+          if (err) {
+          reject(err);
+          } else {
+          resolve(assets);
+          }
+      });
+  });
+}
+
 export async function getSeaDriver(odoo,id,company_id) {
   return new Promise((resolve, reject) => {
       const inParams = [];
