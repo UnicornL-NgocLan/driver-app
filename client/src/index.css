@@ -43,3 +43,11 @@ code {
 .ant-list-item-meta-title{
   margin:0rem 0 8px;
 }
+
+.date-column{
+  font-size:14px;
+}
+
+th.ant-table-cell{
+  background:#f2f2f2 !important;
+}

@@ -24,27 +24,24 @@ import 'dayjs/locale/vi';
 import {
     DndContext, 
     closestCenter,
-    KeyboardSensor,
-    PointerSensor,
     useSensor,
     useSensors,
     TouchSensor,
     MouseSensor,
   } from '@dnd-kit/core';
-  import {
-    arrayMove,
-    SortableContext,
-    useSortable,
-    verticalListSortingStrategy,
-  } from '@dnd-kit/sortable';
-  import { CSS } from "@dnd-kit/utilities";
-  import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+arrayMove,
+SortableContext,
+useSortable,
+verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from "@dnd-kit/utilities";
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
 import BottomNavigator from '../../widgets/BottomNavigator'
 import SeaTransport from './components/SeaTransport'
 import { getDrivers } from '../../redux/reducers/driverReducer'
 import moment from 'moment'
 import VehicleList from './components/VehicleList'
-
 
 const Home = () => {
     const dispatch = useDispatch();
@@ -404,7 +401,21 @@ const Home = () => {
                 <List
                     itemLayout="horizontal"
                     dataSource={vehicleList}
-                    renderItem={(item, index) => <VehicleList key={item.id} data={item}/>}
+                    renderItem={(item) => <VehicleList 
+                        isForReminder = {true}
+                        key={item.id} data={item}/>}
+                />
+            </div>
+            :
+            defaultIndex === 3 && vehicleList.length > 0
+            ?
+            <div style={{padding:'1rem 1rem 55px'}}>
+                <List
+                    itemLayout="horizontal"
+                    dataSource={vehicleList}
+                    renderItem={(item) => <VehicleList 
+                        isForReminder = {false}
+                        key={item.id} data={item}/>}
                 />
             </div>
             :

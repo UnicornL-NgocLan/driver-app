@@ -201,3 +201,21 @@ export async function getAllVehicles(odoo,company_id) {
   });
 }
 
+export async function getAllOdometers(odoo,vehicle_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+      inParams.push([["vehicle_id","=",parseInt(vehicle_id)]]); 
+      inParams.push(["date","value","vehicle_id","create_uid"]); 
+      inParams.push(0); 
+      const params = [];
+      params.push(inParams);
+      odoo.execute_kw("fleet.vehicle.odometer", 'search_read', params, (err, assets) => {
+          if (err) {
+          reject(err);
+          } else {
+          resolve(assets);
+          }
+      });
+  });
+}
+

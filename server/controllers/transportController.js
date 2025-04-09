@@ -8,12 +8,14 @@ import {
     checkCurrentTransportLineIsDone,
     checkCurrentTransportLineIsReady,
     getAllTransportLineJustStateAndSequence,
+    getAllOdometers,
 } from "../utils/getOdooUserData.js"
 import {
     updateActualEndDate,
     doneTransportLine,
     cancelTransportLine,
-    updateSequenceAndStatusTransportLine
+    updateSequenceAndStatusTransportLine,
+    addVehicleOdometerValue,
 } from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
@@ -133,6 +135,37 @@ export const transportCtrl = {
                 );
             }
             res.status(200).json({msg:"Cập nhật thành công!"})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+
+    addVehicleOdometerValue: async (req,res) => {
+        try {
+            const {vehicle_id,odometer_value,date} = req.body;
+            if(!odometer_value) return res.status(400).json({msg:"Giá trị đồng hồ xe không được để trống!"});
+            if(!vehicle_id) return res.status(400).json({msg:"Vui lòng cung cấp tên phương tiện!"});
+            
+            const data = {
+                value: odometer_value,
+                date,
+                vehicle_id,
+            };
+            await addVehicleOdometerValue(req.odoo,data);
+            res.status(200).json({data:"Đã tạo thành công!"})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message });
+        }
+    },
+
+    getVehicleOdometerLines: async (req,res) => {
+        try {
+            const {vehicle_id} = req.query;
+            if(!vehicle_id) return res.status(400).json({msg:"Vui lòng cung cấp tên phương tiện!"});
+            const data = await getAllOdometers(req.odoo,vehicle_id);
+            res.status(200).json({data})
         } catch (error) {
             console.log(error);
             res.status(500).json({ msg: error.message });

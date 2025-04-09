@@ -6,8 +6,9 @@ import blue from '../../../images/record.png'
 import yellow from '../../../images/circle.png'
 import { useState } from 'react'
 import ReminderList from './ReminderLine'
+import OdometerLine from './OdometerLine'
 
-const VehicleList = ({data}:{data:IVehicle}) => {
+const VehicleList = ({data,isForReminder}:{data:IVehicle,isForReminder:boolean}) => {
     const [openVehicleReminder, setOpenVehicleReminder] = useState<any>(false)
 
     const handleOpenVehicleReminders = () => {
@@ -17,7 +18,6 @@ const VehicleList = ({data}:{data:IVehicle}) => {
     const handleCloseVehicleReminders = () => {
         setOpenVehicleReminder(false)
     }
-
 
     const handleOdooImage = (image:string) => {
         return image ? `data:image/png;base64,${image}` : notAvailable;
@@ -42,25 +42,28 @@ const VehicleList = ({data}:{data:IVehicle}) => {
                             <Tag color={data.is_on_mission ? "red" : "green"} style={{marginTop:3}}>{data.is_on_mission ? "Đamg chạy giao hàng" : "Khả dụng"}</Tag>
                         </div>
                     </div>
-                    <div>
+                    {isForReminder && <div>
                         <div style={{display:'flex',alignItems:'center',gap:5}}>
-                        <img src={yellow} alt="" style={{height:13,width:13}}/>
-                        <span style={{fontSize:14,fontWeight:500}}>3</span>
+                            <img src={yellow} alt="" style={{height:13,width:13}}/>
+                            <span style={{fontSize:14,fontWeight:500}}>3</span>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:5}}>
-                        <img src={blue} alt="" style={{height:13,width:13}}/>
-                        <span style={{fontSize:14,fontWeight:500}}>5</span>
+                            <img src={blue} alt="" style={{height:13,width:13}}/>
+                            <span style={{fontSize:14,fontWeight:500}}>5</span>
                         </div>
                         <div style={{display:'flex',alignItems:'center',gap:5}}>
-                        <img src={red} alt="" style={{height:13,width:13}}/>
-                        <span style={{fontSize:14,fontWeight:500}}>2</span>
+                            <img src={red} alt="" style={{height:13,width:13}}/>
+                            <span style={{fontSize:14,fontWeight:500}}>2</span>
                         </div>
-                    </div>
+                    </div>}
                 </div>
         </List.Item>
         {
-            openVehicleReminder && <ReminderList vehicle={data} handleClose={handleCloseVehicleReminders} /> 
-        }    
+            openVehicleReminder && isForReminder && <ReminderList vehicle={data} handleClose={handleCloseVehicleReminders} /> 
+        }
+        {
+            openVehicleReminder && !isForReminder && <OdometerLine vehicle={data} handleClose={handleCloseVehicleReminders} /> 
+        }      
     </>
   )
 }

@@ -78,3 +78,19 @@ export async function updateSequenceAndStatusTransportLine(odoo, data, uid) {
         });
     });
 }
+
+export async function addVehicleOdometerValue(odoo, data) {
+    return new Promise((resolve, reject) => {
+        let inParams = [];
+        inParams.push(data);
+        let params = [];
+        params.push(inParams);
+        odoo.execute_kw("fleet.vehicle.odometer", "create", params, function (err, user) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(user);
+            }
+        });
+    });
+}

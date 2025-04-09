@@ -12,5 +12,7 @@ router.patch("/update-sea-transport-line",authenticateUser,otherUserAuthorize,tr
 router.patch("/cancel-sea-transport-line",authenticateUser,otherUserAuthorize,transportCtrl.handleCancelTransportLine);
 router.get("/get-vehicle-list",authenticateUser,otherUserAuthorize,transportCtrl.getAllVehicles);
 router.patch("/update-sequence-sea-transport-line",authenticateUser,otherUserAuthorize,transportCtrl.updateSequenceTransportLine);
+router.post("/add-vehicle-odometer-value",authenticateUser,transportCtrl.addVehicleOdometerValue);
+router.get("/get-vehicle-odometer-value",authenticateUser, transportCtrl.getVehicleOdometerLines);
 
 export default router.stack;

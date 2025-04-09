@@ -3,6 +3,7 @@ import { PiPackageFill } from "react-icons/pi";
 import { GoHistory } from "react-icons/go";
 import { myColor } from 'color';
 import { BiSolidBellRing } from "react-icons/bi";
+import { AiFillDashboard } from "react-icons/ai";
 
 const BottomNavigator = ({id,handleChangeIndex}:{id:number,handleChangeIndex:(i:number)=>void}) => {
     const checkForActive = (currentId:number) => id === currentId ? true : false;
@@ -27,6 +28,12 @@ const BottomNavigator = ({id,handleChangeIndex}:{id:number,handleChangeIndex:(i:
         style={{display:'flex',gap:1,flexDirection:'column',alignItems:'center',flex:1, color:`${checkForActive(2) ? myColor.buttonColor : myColor.secondaryColor}`}}>
             <BiSolidBellRing style={{fontSize:20}}/>
             <span style={{fontSize:14,fontWeight:`${checkForActive(2) ? 700 : 500}`}}>Lời nhắc</span>
+        </div>
+        <div 
+        onClick={() => handleChangeIndex(3)}
+        style={{display:'flex',gap:1,flexDirection:'column',alignItems:'center',flex:1, color:`${checkForActive(3) ? myColor.buttonColor : myColor.secondaryColor}`}}>
+            <AiFillDashboard style={{fontSize:20}}/>
+            <span style={{fontSize:14,fontWeight:`${checkForActive(3) ? 700 : 500}`}}>Đồng hồ</span>
         </div>
     </div>
   )

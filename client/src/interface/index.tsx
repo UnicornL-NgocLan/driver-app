@@ -34,3 +34,7 @@ export interface IVehicle {
     is_on_mission:boolean,
     image:string,
 }
+
+export interface IOdometerLine {
+    
+}

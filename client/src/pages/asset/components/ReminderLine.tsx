@@ -3,10 +3,11 @@ import { IoArrowBack } from 'react-icons/io5'
 import Skeleton from 'react-loading-skeleton'
 import { myColor } from 'color'
 import { getErrorMessage } from 'helpers/getErrorMessage'
-import axios from 'axios'
 import { Button, Table, Tag } from 'antd'
 import { IVehicle } from 'interface'
 import { FaCheck } from "react-icons/fa";
+import moment from 'moment';
+import app from 'axiosConfig'
 
 const taskData = [
   {
@@ -97,10 +98,6 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
     const fetchReminderLines = async () => {
       try {
         setFetchData(true);
-        // const {data} = await axios.get(`https://api.example.com/reminder-lines?vehicle_id=${vehicle.id}`);
-        // if(data.data){
-        //   setReminderLines(data.data);
-        // }
 
       } catch (error) {
         const message = getErrorMessage(error);
@@ -111,10 +108,8 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
     }
 
 
-    const handleAction = () => {
-      console.log("Selected Tasks:", selectedRows);
-      // Example action - replace this with your actual action
-      alert(`You selected ${selectedRows.length} task(s).`);
+    const handleAction = async () => {
+      
     };
 
     // Count items by state
@@ -185,6 +180,7 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
                     <Table
                       rowSelection={{selectedRowKeys,onChange: onSelectChange}}
                       columns={columns}
+                      rowKey={record => record.key}
                       dataSource={filteredTasks}
                       className="reminder-table"
                       pagination={false}
