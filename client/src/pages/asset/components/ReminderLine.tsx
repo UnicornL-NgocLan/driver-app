@@ -11,7 +11,7 @@ import app from 'axiosConfig'
 const filterOptions = ['all', 'due_soon', 'due', 'overdue', 'cancel', 'active'];
 
 const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>void}) => {
-    const [fetchData,setFetchData] = useState<boolean>(false);
+    const [fetchData,setFetchData] = useState<boolean>(true);
     const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
     const [selectedRows, setSelectedRows] = useState([]);
     const [activeFilter, setActiveFilter] = useState("all");
