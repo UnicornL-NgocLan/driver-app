@@ -14,8 +14,6 @@ import Empty from 'widgets/Empty'
 import accept from '../../../images/accept.png'
 import cancel from '../../../images/cancel.png'
 import delivery from '../../../images/fast-delivery.png'
-import clock from '../../../images/clock.png'
-import pencil from '../../../images/pencil.png'
 import moment from 'moment'
 
 

@@ -92,8 +92,7 @@ const OdometerLine = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
         setConfirmLoading(false)
       }
     };
-  
-
+    
     useEffect(() => {
       fetchOdooMeterLines();
     }, []);
@@ -144,7 +143,14 @@ const OdometerLine = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
             >
                 <InputNumber 
                 value={value}
+                formatter={(value) =>
+                  value ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
+                }
+                parser={value =>
+                  value ? parseInt(value.toString().replace(/\./g, ''), 10) : 0
+                }
                 onChange={(value:any)=>setValue(value)}
+                min = {0}
                 addonAfter="km" style={{marginTop:10, marginBottom:10}}/>
             </Modal>
     </div>
