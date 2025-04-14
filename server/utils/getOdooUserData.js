@@ -219,3 +219,39 @@ export async function getAllOdometers(odoo,vehicle_id) {
   });
 }
 
+export async function getAllWarningReminder(odoo,company_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+      inParams.push([["company_id","=",parseInt(company_id)]]); 
+      inParams.push(["id","state","vehicle_id"]); 
+      inParams.push(0); 
+      const params = [];
+      params.push(inParams);
+      odoo.execute_kw("vehicle.service.reminder", 'search_read', params, (err, assets) => {
+          if (err) {
+          reject(err);
+          } else {
+          resolve(assets);
+          }
+      });
+  });
+}
+
+export async function getAllReminders(odoo,vehicle_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+      inParams.push([["vehicle_id","=",parseInt(vehicle_id)]]); 
+      inParams.push(["id","state","due_odometer","name"]); 
+      inParams.push(0); 
+      const params = [];
+      params.push(inParams);
+      odoo.execute_kw("vehicle.service.reminder", 'search_read', params, (err, assets) => {
+          if (err) {
+          reject(err);
+          } else {
+          resolve(assets);
+          }
+      });
+  });
+}
+

@@ -94,3 +94,17 @@ export async function addVehicleOdometerValue(odoo, data) {
         });
     });
 }
+
+export async function markAsDoneReminderLine(odoo, uid) {
+    return new Promise((resolve, reject) => {
+        let params = [];
+        params.push([parseInt(uid)]);
+        odoo.execute_kw("vehicle.service.reminder", "mark_as_done", params, function (err, user) {
+            if (err) {
+                reject(err);
+            } else {
+                resolve(user);
+            }
+        });
+    });
+}

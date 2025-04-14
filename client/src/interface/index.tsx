@@ -36,5 +36,21 @@ export interface IVehicle {
 }
 
 export interface IOdometerLine {
-    
+    id?:number,
+    date:Date,
+    value:number,
+    create_uid:any,
+}
+
+export interface IWarningReminder {
+    id:number,
+    state:string,
+    vehicle_id:any
+}
+
+export interface IReminderLine {
+    id:number,
+    state:string,
+    name:string,
+    due_odometer:number,
 }

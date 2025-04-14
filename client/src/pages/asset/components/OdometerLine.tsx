@@ -4,12 +4,11 @@ import Skeleton from 'react-loading-skeleton'
 import { myColor } from 'color'
 import { getErrorMessage } from 'helpers/getErrorMessage'
 import { Table, Modal, InputNumber } from 'antd'
-import { IVehicle } from 'interface'
+import { IOdometerLine, IVehicle } from 'interface'
 import moment from 'moment';
 import app from 'axiosConfig'
 import Empty from 'widgets/Empty'
 import { RiAddLargeFill } from "react-icons/ri";
-import lodash from 'lodash'
 
 const columns = [
   {
@@ -46,7 +45,7 @@ const columns = [
 
 const OdometerLine = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>void}) => {
     const [fetchData,setFetchData] = useState<boolean>(false);
-    const [odometerLines,setOdometerLines] = useState<any[]>([]);
+    const [odometerLines,setOdometerLines] = useState<IOdometerLine[]>([]);
     const [open,setOpen] = useState<boolean>(false);
     const [confirmLoading,setConfirmLoading] = useState<boolean>(false);
     const [value,setValue] = useState(0);
@@ -121,7 +120,7 @@ const OdometerLine = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
                     <Table
                       columns={columns}
                       bordered
-                      rowKey={record => record.id}
+                      rowKey={record => record.id ?? 'default-key'}
                       locale = {{ emptyText: <Empty/> }}
                       size = "small"
                       dataSource={odometerLines}

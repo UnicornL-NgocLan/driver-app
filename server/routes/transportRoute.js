@@ -14,5 +14,8 @@ router.get("/get-vehicle-list",authenticateUser,otherUserAuthorize,transportCtrl
 router.patch("/update-sequence-sea-transport-line",authenticateUser,otherUserAuthorize,transportCtrl.updateSequenceTransportLine);
 router.post("/add-vehicle-odometer-value",authenticateUser,transportCtrl.addVehicleOdometerValue);
 router.get("/get-vehicle-odometer-value",authenticateUser, transportCtrl.getVehicleOdometerLines);
+router.get("/get-all-warning-reminders",authenticateUser, transportCtrl.getAllWarningReminder);
+router.get("/get-all-reminders",authenticateUser, transportCtrl.getAllReminders);
+router.patch("/mark-as-done-reminder",authenticateUser, transportCtrl.markAsDoneReminderLine);
 
 export default router.stack;

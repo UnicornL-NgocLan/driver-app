@@ -9,6 +9,8 @@ import {
     checkCurrentTransportLineIsReady,
     getAllTransportLineJustStateAndSequence,
     getAllOdometers,
+    getAllWarningReminder,
+    getAllReminders
 } from "../utils/getOdooUserData.js"
 import {
     updateActualEndDate,
@@ -16,6 +18,7 @@ import {
     cancelTransportLine,
     updateSequenceAndStatusTransportLine,
     addVehicleOdometerValue,
+    markAsDoneReminderLine
 } from "../utils/updateOdooUserData.js"
 
 export const transportCtrl = {
@@ -169,6 +172,41 @@ export const transportCtrl = {
         } catch (error) {
             console.log(error);
             res.status(500).json({ msg: error.message });
+        }
+    },
+
+    getAllWarningReminder: async (req,res) => {
+        try {
+            const {company_id} = req.query;
+            if(!company_id) return res.status(400).json({msg:"Vui lòng cung cấp công ty!"});
+            const data = await getAllWarningReminder(req.odoo,company_id);
+            res.status(200).json({data})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message }); 
+        }
+    },
+
+    getAllReminders: async (req,res) => {
+        try {
+            const {vehicle_id} = req.query;
+            if(!vehicle_id) return res.status(400).json({msg:"Vui lòng cung cấp phương tiện!"});
+            const data = await getAllReminders(req.odoo,vehicle_id);
+            res.status(200).json({data})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message }); 
+        }
+    },
+
+    markAsDoneReminderLine: async (req,res) => {
+        try {
+            const {id} = req.query;
+            await markAsDoneReminderLine(req.odoo,id);
+            res.status(200).json({msg:"Đã hoàn tất"})
+        } catch (error) {
+            console.log(error);
+            res.status(500).json({ msg: error.message })
         }
     }
 }

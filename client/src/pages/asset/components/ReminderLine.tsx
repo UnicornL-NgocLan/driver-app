@@ -4,91 +4,53 @@ import Skeleton from 'react-loading-skeleton'
 import { myColor } from 'color'
 import { getErrorMessage } from 'helpers/getErrorMessage'
 import { Button, Table, Tag } from 'antd'
-import { IVehicle } from 'interface'
+import { IReminderLine, IVehicle } from 'interface'
 import { FaCheck } from "react-icons/fa";
-import moment from 'moment';
 import app from 'axiosConfig'
-
-const taskData = [
-  {
-    key: '1',
-    name: 'Oil Change - Truck 1',
-    currentOdometer: 3000000,
-    dueOdometer: 5000000,
-    state: 'due',
-  },
-  {
-    key: '2',
-    name: 'Tire Rotation - Truck 2',
-    currentOdometer: 3000000,
-    dueOdometer: 3200000,
-    state: 'due_soon',
-  },
-  {
-    key: '3',
-    name: 'Brake Inspection - Truck 3',
-    currentOdometer: 3000000,
-    dueOdometer: 900000,
-    state: 'overdue',
-  },
-  {
-    key: '4',
-    name: 'Brake Inspection - Truck 4',
-    currentOdometer: 3000000,
-    dueOdometer: 900000,
-    state: 'cancel',
-  },
-  {
-    key: '5',
-    name: 'Brake Inspection - Truck 5',
-    currentOdometer: 3000000,
-    dueOdometer: 900000,
-    state: 'active',
-  },
-];
-
-const columns = [
-  {
-    title: 'Tên công việc',
-    dataIndex: 'name',
-    key: 'name',
-    width:200,
-    render: (name:string) => {
-      return <span style={{fontSize:14}}>{name}</span>;
-    },
-  },
-  {
-    title: 'Số Km đến hạn',
-    dataIndex: 'dueOdometer',
-    key: 'dueOdometer',
-    align: 'center' as any,
-    render: (dueOdometer:number) => {
-      return <span style={{fontSize:14}}>{Intl.NumberFormat('vi-VN').format(dueOdometer)}</span>;
-    },
-  },
-  {
-    title: 'Trạng thái',
-    dataIndex: 'state',
-    key: 'state',
-    align: 'center' as any,
-    render: (state:string) => {
-      let color = 'green';
-      if (state === 'overdue') color = 'red';
-      else if (state === 'due_soon') color = 'orange';  
-      else if (state === 'due') color = 'blue';
-      else if (state === 'cancel') color = 'gray';
-      return <Tag color={color}>{state === 'overdue' ? 'Quá hạn' : state === 'due' ? 'Đến hạn' : state === 'due_soon' ? 'Sắp đến hạn' : state === 'cancel' ? 'Bị hủy' : 'Bình thường'}</Tag>;
-    },
-  },
-];
 
 const filterOptions = ['all', 'due_soon', 'due', 'overdue', 'cancel', 'active'];
 
 const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>void}) => {
     const [fetchData,setFetchData] = useState<boolean>(false);
-    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
+    const [selectedRowKeys, setSelectedRowKeys] = useState<number[]>([]);
     const [selectedRows, setSelectedRows] = useState([]);
     const [activeFilter, setActiveFilter] = useState("all");
+    const [reminderLines,setReminderLines] = useState<IReminderLine[]>([]);
+    
+    const columns = [
+      {
+        title: 'Tên công việc',
+        dataIndex: 'name',
+        key: 'name',
+        width:200,
+        render: (name:string) => {
+          return <span style={{fontSize:14}}>{name}</span>;
+        },
+      },
+      {
+        title: 'Số Km đến hạn',
+        dataIndex: 'due_odometer',
+        key: 'due_odometer',
+        align: 'center' as any,
+        render: (dueOdometer:number) => {
+          return <span style={{fontSize:14}}>{Intl.NumberFormat('vi-VN').format(dueOdometer)}</span>;
+        },
+      },
+      {
+        title: 'Trạng thái',
+        dataIndex: 'state',
+        key: 'state',
+        align: 'center' as any,
+        render: (state:string) => {
+          let color = 'green';
+          if (state === 'overdue') color = 'red';
+          else if (state === 'due_soon') color = 'orange';  
+          else if (state === 'due') color = 'blue';
+          else if (state === 'cancel') color = 'gray';
+          return <Tag color={color}>{state === 'overdue' ? 'Quá hạn' : state === 'due' ? 'Đến hạn' : state === 'due_soon' ? 'Sắp đến hạn' : state === 'cancel' ? 'Bị hủy' : 'Bình thường'}</Tag>;
+        },
+      },
+    ];
 
     const onSelectChange = (newSelectedRowKeys:any, selectedRows:any) => {
       setSelectedRowKeys(newSelectedRowKeys);
@@ -98,7 +60,10 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
     const fetchReminderLines = async () => {
       try {
         setFetchData(true);
-
+        const {data} = await app.get(`/api/get-all-reminders?vehicle_id=${vehicle.id}`)
+        if(data.data){
+          setReminderLines(data.data);
+        }
       } catch (error) {
         const message = getErrorMessage(error);
         alert(message);
@@ -109,19 +74,35 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
 
 
     const handleAction = async () => {
-      
+      try {
+        if(window.confirm("Bạn có muốn đánh dấu hoàn tất các lời nhắc?")){
+          setFetchData(true);
+          const list = [...selectedRowKeys].map((lineId)=>{
+            return app.patch(`/api/mark-as-done-reminder?id=${lineId}`);
+          })
+          await Promise.all([...list]);
+          await fetchReminderLines();
+          setSelectedRowKeys([]);
+          setSelectedRows([]);
+        }
+      } catch (error) {
+        const message = getErrorMessage(error);
+        alert(message);
+      } finally {
+        setFetchData(false);
+      }
     };
 
     // Count items by state
     const getCount = (state:string) => {
-      if (state === "all") return taskData.length;
-      return taskData.filter((task) => task.state === state).length;
+      if (state === "all") return reminderLines.length;
+      return reminderLines.filter((task) => task.state === state).length;
     };
 
     const filteredTasks =
     activeFilter === "all"
-      ? taskData
-      : taskData.filter((task) => task.state === activeFilter);
+      ? reminderLines
+      : reminderLines.filter((task) => task.state === activeFilter);
 
     useEffect(() => {
       fetchReminderLines();
@@ -180,7 +161,7 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
                     <Table
                       rowSelection={{selectedRowKeys,onChange: onSelectChange}}
                       columns={columns}
-                      rowKey={record => record.key}
+                      rowKey={record => record.id}
                       dataSource={filteredTasks}
                       className="reminder-table"
                       pagination={false}

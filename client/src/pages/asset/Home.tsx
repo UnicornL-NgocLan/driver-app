@@ -51,7 +51,6 @@ const Home = () => {
     const [historyTransport,setHistoryTransport] = useState<ITransport[]>([]);
     const companies = useSelector((state) => (state as any).companies);
     const auth = useSelector((state) => (state as any).auth);
-    const [items, setItems] = useState<any>([]);
     const [isDragging, setIsDragging] = useState(false);
 
     const [open, setOpen] = useState<ITransportLine | false>(false);
@@ -61,6 +60,7 @@ const Home = () => {
     const [defaultIndex,setDefaultIndex] = useState(0);
     const [driver,setDriver] = useState<number | null>(null);
     const [vehicleList,setVehicleList] = useState<IVehicle[]>([]);
+    const [warningReminders,setWarningReminders] = useState([]);
 
     dayjs.locale('vi');
 
@@ -182,8 +182,6 @@ const Home = () => {
             const message = getErrorMessage(error);
             alert(message);
             setFetchData(false);
-        } finally {
-            setLoading(false);
         }
     }
 
@@ -218,6 +216,22 @@ const Home = () => {
             const message = getErrorMessage(error);
             alert(message);
         } finally {
+            setFetchData(false);
+        }
+    }
+
+    const handleFetchWarningReminders = async () => {
+        try {
+            setLoading(true);
+            if(auth && auth.partner_id){
+                const {data} = await app.get(`/api/get-all-warning-reminders?company_id=${auth.company_id[0]}`);
+                if(data?.data && data?.data.length > 0){
+                    setWarningReminders(data.data)
+                }
+            }
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
             setFetchData(false);
         }
     }
@@ -264,9 +278,17 @@ const Home = () => {
         } else if(i === 1){ 
             setLoading(true);
             await handleFetchTransport();
+        } else if (i == 2){
+            setLoading(true);
+            await Promise.all([
+                handleFetchVehicle(),
+                handleFetchWarningReminders(),
+            ])
+            setLoading(false);
         } else {
             setLoading(true);
             await handleFetchVehicle();
+            setLoading(false);
         }
     }
 
@@ -377,7 +399,7 @@ const Home = () => {
                 <List
                     itemLayout="horizontal"
                     dataSource={historyTransport}
-                    renderItem={(item, index) => <SeaTransport key={item.id} data={item}/>}
+                    renderItem={(item) => <SeaTransport key={item.id} data={item}/>}
                 />
             </div>
             :
@@ -403,6 +425,8 @@ const Home = () => {
                     dataSource={vehicleList}
                     renderItem={(item) => <VehicleList 
                         isForReminder = {true}
+                        handleChangeIndex = {handleChangeIndex}
+                        warningReminders = {warningReminders}
                         key={item.id} data={item}/>}
                 />
             </div>
@@ -415,6 +439,7 @@ const Home = () => {
                     dataSource={vehicleList}
                     renderItem={(item) => <VehicleList 
                         isForReminder = {false}
+                        handleChangeIndex = {handleChangeIndex}
                         key={item.id} data={item}/>}
                 />
             </div>

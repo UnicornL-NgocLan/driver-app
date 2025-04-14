@@ -1,5 +1,5 @@
 import { List, Tag } from 'antd'
-import { IVehicle } from 'interface'
+import { IVehicle, IWarningReminder } from 'interface'
 import notAvailable from '../../../images/not-available-circle.png'
 import red from '../../../images/round.png'
 import blue from '../../../images/record.png'
@@ -8,19 +8,26 @@ import { useState } from 'react'
 import ReminderList from './ReminderLine'
 import OdometerLine from './OdometerLine'
 
-const VehicleList = ({data,isForReminder}:{data:IVehicle,isForReminder:boolean}) => {
-    const [openVehicleReminder, setOpenVehicleReminder] = useState<any>(false)
+const VehicleList = ({data,isForReminder,warningReminders,handleChangeIndex}:{handleChangeIndex:(i:number)=>void,data:IVehicle,isForReminder:boolean,warningReminders?:IWarningReminder[]}) => {
+    const [openVehicleReminder, setOpenVehicleReminder] = useState<any>(false);
 
     const handleOpenVehicleReminders = () => {
         setOpenVehicleReminder(data)
     }
 
     const handleCloseVehicleReminders = () => {
-        setOpenVehicleReminder(false)
+        setOpenVehicleReminder(false);
+        handleChangeIndex(isForReminder ? 2 : 3)
     }
 
     const handleOdooImage = (image:string) => {
         return image ? `data:image/png;base64,${image}` : notAvailable;
+    }
+
+    const checkNumberOfWarningType = (type:string) => {
+        if(warningReminders && isForReminder){
+            return warningReminders.filter((i)=> i.state === type && i.vehicle_id.length > 0 && i.vehicle_id[0] === data.id).length || 0
+        }
     }
 
 
@@ -43,18 +50,18 @@ const VehicleList = ({data,isForReminder}:{data:IVehicle,isForReminder:boolean})
                         </div>
                     </div>
                     {isForReminder && <div>
-                        <div style={{display:'flex',alignItems:'center',gap:5}}>
+                        {checkNumberOfWarningType('due_soon')! > 0 && <div style={{display:'flex',alignItems:'center',gap:5}}>
                             <img src={yellow} alt="" style={{height:13,width:13}}/>
-                            <span style={{fontSize:14,fontWeight:500}}>3</span>
-                        </div>
-                        <div style={{display:'flex',alignItems:'center',gap:5}}>
+                            <span style={{fontSize:14,fontWeight:500}}>{checkNumberOfWarningType('due_soon')}</span>
+                        </div>}
+                        {checkNumberOfWarningType('due')! > 0 && <div style={{display:'flex',alignItems:'center',gap:5}}>
                             <img src={blue} alt="" style={{height:13,width:13}}/>
-                            <span style={{fontSize:14,fontWeight:500}}>5</span>
-                        </div>
-                        <div style={{display:'flex',alignItems:'center',gap:5}}>
+                            <span style={{fontSize:14,fontWeight:500}}>{checkNumberOfWarningType('due')}</span>
+                        </div>}
+                        {checkNumberOfWarningType('overdue')! > 0 && <div style={{display:'flex',alignItems:'center',gap:5}}>
                             <img src={red} alt="" style={{height:13,width:13}}/>
-                            <span style={{fontSize:14,fontWeight:500}}>2</span>
-                        </div>
+                            <span style={{fontSize:14,fontWeight:500}}>{checkNumberOfWarningType('overdue')}</span>
+                        </div>}
                     </div>}
                 </div>
         </List.Item>
