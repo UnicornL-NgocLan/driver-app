@@ -151,11 +151,9 @@ export const transportCtrl = {
             if(!vehicle_id) return res.status(400).json({msg:"Vui lòng cung cấp tên phương tiện!"});
             
             const data = {
-                value: odometer_value,
-                date,
-                vehicle_id,
+                odometer: odometer_value,
             };
-            await addVehicleOdometerValue(req.odoo,data);
+            await addVehicleOdometerValue(req.odoo,data,vehicle_id);
             res.status(200).json({data:"Đã tạo thành công!"})
         } catch (error) {
             console.log(error);

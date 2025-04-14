@@ -79,13 +79,14 @@ export async function updateSequenceAndStatusTransportLine(odoo, data, uid) {
     });
 }
 
-export async function addVehicleOdometerValue(odoo, data) {
+export async function addVehicleOdometerValue(odoo, data,uid) {
     return new Promise((resolve, reject) => {
-        let inParams = [];
+        const inParams = [];
+        inParams.push([parseInt(uid)]); 
         inParams.push(data);
-        let params = [];
+        const params = [];
         params.push(inParams);
-        odoo.execute_kw("fleet.vehicle.odometer", "create", params, function (err, user) {
+        odoo.execute_kw("fleet.vehicle", "write", params, function (err, user) {
             if (err) {
                 reject(err);
             } else {
