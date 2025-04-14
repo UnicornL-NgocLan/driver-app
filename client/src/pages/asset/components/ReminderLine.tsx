@@ -116,7 +116,7 @@ const ReminderList = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
                   <IoArrowBack style={{fontSize:18,color:'white'}} onClick={handleClose}/>
                   <span style={{fontSize:15, color:'white'}}>{vehicle.brand_id[1]} / {vehicle.license_plate}</span>
                 </div>
-                {selectedRows.length > 0 && <FaCheck style={{fontSize:20,color:'white'}} onClick={handleAction}/>}
+                {selectedRows.length > 0 && !fetchData && <FaCheck style={{fontSize:20,color:'white'}} onClick={handleAction}/>}
               </div>
           </div>
             {
