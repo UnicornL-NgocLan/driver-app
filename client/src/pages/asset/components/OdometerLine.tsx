@@ -143,6 +143,7 @@ const OdometerLine = ({vehicle,handleClose}:{vehicle:IVehicle,handleClose:()=>vo
             >
                 <InputNumber 
                 value={value}
+                size='large'
                 inputMode = "numeric"
                 formatter={(value) =>
                   value ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
