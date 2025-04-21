@@ -15,8 +15,8 @@ services:
     restart: always
     environment:
       - JWT_SECRET=538500420HFUE214B2POhf32819cvbw42492w_2hweYUwelooneer32329
-      - ODOO_URL=https://test.seateklab.vn/
-      - ODOO_DB=21_01_2025
+      - ODOO_URL=https://home.seacorp.vn/
+      - ODOO_DB=opensea12pro
       - CRYPTO_KEY=5285029jfkfnwefrrweir3ifw19f3efcs368dsdasae24932k4343ppp
       - IV=5a53oi45de9235nf2y423
       - MONGO_URI=mongodb+srv://lanle:seatek@seatek.g7xiqoq.mongodb.net/?retryWrites=true&w=majority&appName=Seatek
