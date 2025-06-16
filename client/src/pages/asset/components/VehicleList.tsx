@@ -46,7 +46,7 @@ const VehicleList = ({data,isForReminder,warningReminders,handleChangeIndex}:{ha
                             <p style={{margin:0,fontSize:14}}>Hãng: <span style={{marginLeft:0,fontWeight:700}}>{data?.brand_id[1]}</span></p>
                             <p style={{margin:0,fontSize:14}}>Biển số: <span style={{marginLeft:0,fontWeight:700}}>{data?.license_plate}</span></p>
                             <p style={{margin:0,fontSize:14}}>Số Km: <span style={{marginLeft:0,fontWeight:700}}>{Intl.NumberFormat('vi-VN').format(data?.odometer)}</span></p>
-                            <Tag color={data.is_on_mission ? "red" : "green"} style={{marginTop:3}}>{data.is_on_mission ? "Đamg chạy giao hàng" : "Khả dụng"}</Tag>
+                            <Tag color={data.is_on_mission ? "red" : "green"} style={{marginTop:3}}>{data.is_on_mission ? "Đang chạy giao hàng" : "Khả dụng"}</Tag>
                         </div>
                     </div>
                     {isForReminder && <div>

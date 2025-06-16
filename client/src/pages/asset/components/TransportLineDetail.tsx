@@ -1,8 +1,4 @@
 import { List } from 'antd'
-import marker from '../../../images/placeholder.png'
-import box from '../../../images/box.png'
-import location from '../../../images/location.png'
-import partner from '../../../images/manager.png'
 import { ITransport, ITransportLine } from 'interface'
 import { myColor } from 'color'
 import { useEffect, useState } from 'react'

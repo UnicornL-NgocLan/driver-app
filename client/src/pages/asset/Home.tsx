@@ -172,7 +172,7 @@ const Home = () => {
     const handleFetchVehicle = async () => {
         try {
             setVehicleList([]);
-            if(auth && auth.driver){
+            if(auth){
                 const {data} = await app.get(`/api/get-vehicle-list?company_id=${auth.company_id[0]}`);
                 if(data?.data){
                     setVehicleList(data.data);
@@ -278,7 +278,7 @@ const Home = () => {
         } else if(i === 1){ 
             setLoading(true);
             await handleFetchTransport();
-        } else if (i == 2){
+        } else if (i === 2){
             setLoading(true);
             await Promise.all([
                 handleFetchVehicle(),
