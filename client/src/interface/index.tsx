@@ -42,6 +42,17 @@ export interface IOdometerLine {
     create_uid:any,
 }
 
+export interface IFuelLog {
+    id:number,
+    date:Date,
+    liter:number,
+    odometer:number,
+    is_full:boolean,
+    amount:number,
+    create_uid:any,
+    created_at:Date,
+    write_uid:any,}
+
 export interface IWarningReminder {
     id:number,
     state:string,

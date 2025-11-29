@@ -207,7 +207,8 @@ const Home = () => {
             await Promise.all([
                 fetchCompanies(),
                 handleFetchUserData(),
-                handleFetchAllDrivers()
+                handleFetchAllDrivers(),
+                handleFetchVehicle(),
             ])
             const driver_id = await handleGetSeaDriver();
             setDriver(driver_id);
@@ -273,6 +274,11 @@ const Home = () => {
     const handleChangeIndex = async (i:number) => {
         setDefaultIndex(i);
         if(i === 0){
+            setLoading(true);
+            await handleFetchVehicle();
+            setLoading(false);
+        } else
+        if(i === -1){
             setLoading(true);
             await handleFetchActiveTransportLines();
         } else if(i === 1){ 
@@ -340,15 +346,15 @@ const Home = () => {
         fetchAllNecessaryData();
     },[]);
 
-    useEffect(()=>{
-        let interval = setInterval(() => {
-            if(defaultIndex === 0 && driver && !isDragging){
-                handleFetchActiveTransportLines(driver);
-            }
-        },1000 * 60)
+    // useEffect(()=>{
+    //     let interval = setInterval(() => {
+    //         if(defaultIndex === -1 && driver && !isDragging){
+    //             handleFetchActiveTransportLines(driver);
+    //         }
+    //     },1000 * 60)
 
-        return () => clearInterval(interval)
-    },[defaultIndex,driver])
+    //     return () => clearInterval(interval)
+    // },[defaultIndex,driver])
      
     if(fetchData){
         return <PageLoading/>
@@ -364,7 +370,21 @@ const Home = () => {
                 <Skeleton count={3} height={150} borderRadius ={5} style={{marginBottom:6}}/>
             </div>
             :
-            defaultIndex === 0 && activeTransportLines.length > 0
+             defaultIndex === 0 && vehicleList.length > 0
+            ?
+            <div style={{padding:'1rem 1rem 55px'}}>
+                <List
+                    itemLayout="horizontal"
+                    dataSource={vehicleList}
+                    renderItem={(item) => <VehicleList 
+                        isForReminder = {false}
+                        isFuelLog = {true}
+                        handleChangeIndex = {handleChangeIndex}
+                        key={item.id} data={item}/>}
+                />
+            </div>
+            :
+            defaultIndex === -1 && activeTransportLines.length > 0
             ?
             <div style={{padding:'1rem 1rem 55px'}}>
                 <DndContext 

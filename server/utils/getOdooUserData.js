@@ -80,18 +80,7 @@ export async function getAllTransportLine(odoo, id, getAll = false) {
       ["transport_id", "=", parseInt(id)],
       ["state", "in", condition],
     ]);
-    inParams.push([
-      "id",
-      "name",
-      "state",
-      "item_type",
-      "partner_id",
-      "address_start",
-      "address_end",
-      "transport_id",
-      "date_end_actual",
-      "note",
-    ]);
+    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note"]);
     inParams.push(0);
     const params = [];
     params.push(inParams);
@@ -267,6 +256,24 @@ export async function getAllReminders(odoo, vehicle_id) {
     const params = [];
     params.push(inParams);
     odoo.execute_kw("vehicle.service.reminder", "search_read", params, (err, assets) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(assets);
+      }
+    });
+  });
+}
+
+export async function getFuelLogList(odoo, vehicle_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["vehicle_id", "=", parseInt(vehicle_id)]]);
+    inParams.push(["id", "liter", "is_full", "date", "odometer", "amount", "create_uid", "write_uid", "created_at"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("fleet.vehicle.log.fuel", "search_read", params, (err, assets) => {
       if (err) {
         reject(err);
       } else {

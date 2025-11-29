@@ -1,3 +1,4 @@
+import { get } from "mongoose";
 import {
   getAllActiveTransport,
   getSeaDriver,
@@ -11,6 +12,7 @@ import {
   getAllOdometers,
   getAllWarningReminder,
   getAllReminders,
+  getFuelLogList,
 } from "../utils/getOdooUserData.js";
 import {
   updateActualEndDate,
@@ -19,6 +21,8 @@ import {
   updateSequenceAndStatusTransportLine,
   addVehicleOdometerValue,
   markAsDoneReminderLine,
+  addVehicleFuelLogValue,
+  deleteVehicleFuelLogValue,
 } from "../utils/updateOdooUserData.js";
 
 export const transportCtrl = {
@@ -78,8 +82,7 @@ export const transportCtrl = {
       const { id, date_end } = req.body;
       const updateData = { date_end_actual: date_end };
       const result = await checkCurrentTransportLineIsDone(req.odoo, id);
-      if (result.length > 0)
-        return res.status(400).json({ msg: "Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!" });
+      if (result.length > 0) return res.status(400).json({ msg: "Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!" });
       await updateActualEndDate(req.odoo, updateData, id);
       await doneTransportLine(req.odoo, id);
       res.status(200).json({ data: "Cập nhật thành công!" });
@@ -93,8 +96,7 @@ export const transportCtrl = {
     try {
       const { id } = req.body;
       const result = await checkCurrentTransportLineIsReady(req.odoo, id);
-      if (result.length > 0)
-        return res.status(400).json({ msg: "Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!" });
+      if (result.length > 0) return res.status(400).json({ msg: "Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!" });
       await cancelTransportLine(req.odoo, id);
       res.status(200).json({ data: "Cập nhật thành công!" });
     } catch (error) {
@@ -119,9 +121,7 @@ export const transportCtrl = {
       const { lines, transportId } = req.body;
       if (lines.length === 0) return res.status(400).json({ msg: "Không có dữ liệu để cập nhật thứ tự!" });
       const allTransportLines = await getAllTransportLineJustStateAndSequence(req.odoo, transportId[0]);
-      const getAllDoneCancelLines = [...allTransportLines].filter(
-        (item) => item.state === "done" || item.state === "cancel"
-      );
+      const getAllDoneCancelLines = [...allTransportLines].filter((item) => item.state === "done" || item.state === "cancel");
       const stateLines = [...lines].map((item) => {
         return { id: item.id };
       });
@@ -200,6 +200,52 @@ export const transportCtrl = {
       const { id } = req.query;
       await markAsDoneReminderLine(req.odoo, id);
       res.status(200).json({ msg: "Đã hoàn tất" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
+  getFuelLogList: async (req, res) => {
+    try {
+      const { vehicle_id } = req.query;
+      if (!vehicle_id) return res.status(400).json({ msg: "Vui lòng cung cấp phương tiện!" });
+      const data = await getFuelLogList(req.odoo, vehicle_id);
+      res.status(200).json({ data });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
+  createFuelLogLine: async (req, res) => {
+    try {
+      const { vehicle_id, liter, odometer, is_full, amount } = req.body;
+      if (!vehicle_id) return res.status(400).json({ msg: "Vui lòng cung cấp phương tiện!" });
+      if (!liter) return res.status(400).json({ msg: "Vui lòng cung cấp số lít xăng đã đổ!" });
+      if (!odometer) return res.status(400).json({ msg: "Vui lòng cung cấp số Km trên đồng hồ!" });
+      if (!amount) return res.status(400).json({ msg: "Vui lòng cung cấp số tiền đã chi!" });
+
+      await addVehicleFuelLogValue(req.odoo, {
+        vehicle_id: parseInt(vehicle_id),
+        liter: liter,
+        odometer: odometer,
+        is_full: is_full,
+        amount: amount,
+        price_per_liter: amount / liter,
+      });
+      res.status(200).json({ msg: "Đã tạo thành công!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+  deleteFuelLogLine: async (req, res) => {
+    try {
+      const { id } = req.params;
+      if (!id) return res.status(400).json({ msg: "Vui lòng cung cấp dòng cần xóa!" });
+      await deleteVehicleFuelLogValue(req.odoo, id);
+      res.status(200).json({ msg: "Đã xóa thành công!" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ msg: error.message });

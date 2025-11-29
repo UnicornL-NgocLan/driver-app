@@ -107,3 +107,35 @@ export async function markAsDoneReminderLine(odoo, uid) {
     });
   });
 }
+
+export async function addVehicleFuelLogValue(odoo, data) {
+  return new Promise((resolve, reject) => {
+    var inParams = [];
+    inParams.push(data);
+    var params = [];
+    params.push(inParams);
+    odoo.execute_kw("fleet.vehicle.log.fuel", "create", params, function (err, user) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(user);
+      }
+    });
+  });
+}
+
+export async function deleteVehicleFuelLogValue(odoo, id) {
+  return new Promise((resolve, reject) => {
+    var inParams = [];
+    inParams.push([parseInt(id)]); //id to delete
+    var params = [];
+    params.push(inParams);
+    odoo.execute_kw("fleet.vehicle.log.fuel", "unlink", params, function (err, user) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(user);
+      }
+    });
+  });
+}

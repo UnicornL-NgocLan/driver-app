@@ -7,8 +7,10 @@ import yellow from '../../../images/circle.png'
 import { useState } from 'react'
 import ReminderList from './ReminderLine'
 import OdometerLine from './OdometerLine'
+import FuelLogLine from './FuelLogLine'
 
-const VehicleList = ({data,isForReminder,warningReminders,handleChangeIndex}:{handleChangeIndex:(i:number)=>void,data:IVehicle,isForReminder:boolean,warningReminders?:IWarningReminder[]}) => {
+const VehicleList = ({data,isForReminder,warningReminders,isFuelLog=false,handleChangeIndex}:
+    {handleChangeIndex:(i:number)=>void,data:IVehicle,isForReminder:boolean,warningReminders?:IWarningReminder[],isFuelLog?:boolean}) => {
     const [openVehicleReminder, setOpenVehicleReminder] = useState<any>(false);
 
     const handleOpenVehicleReminders = () => {
@@ -17,7 +19,7 @@ const VehicleList = ({data,isForReminder,warningReminders,handleChangeIndex}:{ha
 
     const handleCloseVehicleReminders = () => {
         setOpenVehicleReminder(false);
-        handleChangeIndex(isForReminder ? 2 : 3)
+        handleChangeIndex(isFuelLog ? 0 : isForReminder ? 2 : 3)
     }
 
     const handleOdooImage = (image:string) => {
@@ -70,7 +72,10 @@ const VehicleList = ({data,isForReminder,warningReminders,handleChangeIndex}:{ha
         }
         {
             openVehicleReminder && !isForReminder && <OdometerLine vehicle={data} handleClose={handleCloseVehicleReminders} /> 
-        }      
+        }
+        {
+            openVehicleReminder && isFuelLog && <FuelLogLine vehicle={data} handleClose={handleCloseVehicleReminders} />
+        }  
     </>
   )
 }
