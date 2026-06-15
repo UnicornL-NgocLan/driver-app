@@ -57,7 +57,7 @@ const Home = () => {
     const [confirmLoading, setConfirmLoading] = useState(false);
     const [date, setDate] = useState(dayjs(new Date()));
     const [time, setTime] = useState(dayjs(new Date()));
-    const [defaultIndex,setDefaultIndex] = useState(0);
+    const [defaultIndex,setDefaultIndex] = useState(-1);
     const [driver,setDriver] = useState<number | null>(null);
     const [vehicleList,setVehicleList] = useState<IVehicle[]>([]);
     const [warningReminders,setWarningReminders] = useState([]);
@@ -346,15 +346,15 @@ const Home = () => {
         fetchAllNecessaryData();
     },[]);
 
-    // useEffect(()=>{
-    //     let interval = setInterval(() => {
-    //         if(defaultIndex === -1 && driver && !isDragging){
-    //             handleFetchActiveTransportLines(driver);
-    //         }
-    //     },1000 * 60)
+    useEffect(()=>{
+        let interval = setInterval(() => {
+            if(defaultIndex === -1 && driver && !isDragging){
+                handleFetchActiveTransportLines(driver);
+            }
+        },1000 * 60)
 
-    //     return () => clearInterval(interval)
-    // },[defaultIndex,driver])
+        return () => clearInterval(interval)
+    },[defaultIndex,driver])
      
     if(fetchData){
         return <PageLoading/>
