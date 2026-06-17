@@ -33,6 +33,8 @@ const whitelist = [
   "http://103.161.22.196:3031/",
   "https://logistics.dannygreen.vn",
   "https://logistics.dannygreen.vn/",
+  "https://driver-app-2fsd.onrender.com/",
+  "https://driver-app-2fsd.onrender.com"
 ];
 
 const isOriginAllowed = (origin) => {
