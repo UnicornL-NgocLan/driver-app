@@ -300,7 +300,7 @@ const Home = () => {
             return data;
         } catch (error) {
             const message = getErrorMessage(error);
-            alert(message);
+            alert(error);
             setFetchData(false);
         }
     }
@@ -327,7 +327,7 @@ const Home = () => {
             return data;
         } catch (error) {
             const message = getErrorMessage(error);
-            alert(message);
+            alert(error);
             setFetchData(false);
         }
     }   
