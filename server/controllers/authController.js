@@ -5,6 +5,7 @@ import { attachCookiesToResponse } from "../utils/jwtAttachmentAndCreation.js";
 import { encrypt, decrypt } from "../utils/EnCryptAndDeCrypt.js";
 import { isTokenValid } from "../utils/isTokenValid.js";
 import Users from "../models/user.js";
+import axios from "axios";
 
 export const authCtrl = {
   login: async (req, res) => {
@@ -138,4 +139,30 @@ export const authCtrl = {
       res.status(500).json({ msg: error.message });
     }
   },
+
+  getDropBoxAccessToken: async (req,res) => {
+    try {
+      const credentials = Buffer.from(
+        `${process.env.DROPBOX_APP_KEY}:${process.env.DROPBOX_APP_SECRET}`
+      ).toString("base64");
+
+      const response = await axios.post(
+          "https://api.dropboxapi.com/oauth2/token",
+          new URLSearchParams({
+              grant_type: "refresh_token",
+              refresh_token: process.env.DROPBOX_REFRESH_TOKEN,
+          }),
+          {
+              headers: {
+                  Authorization: `Basic ${credentials}`,
+                  "Content-Type": "application/x-www-form-urlencoded",
+              },
+          }
+      );
+      res.status(200).json({ data: response.data.access_token });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  }
 };

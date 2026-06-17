@@ -139,3 +139,20 @@ export async function deleteVehicleFuelLogValue(odoo, id) {
     });
   });
 }
+
+export async function createTransportLineImage(odoo, data) {
+  return new Promise((resolve, reject) => {
+    var inParams = [];
+    inParams.push(data);
+    var params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line.image", "create", params, function (err, recordId) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(recordId);
+      }
+    });
+  });
+}
+

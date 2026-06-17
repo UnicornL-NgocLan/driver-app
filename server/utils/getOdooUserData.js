@@ -265,6 +265,24 @@ export async function getAllReminders(odoo, vehicle_id) {
   });
 }
 
+export async function getTransportLineImages(odoo, transport_line_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["transport_line_id", "=", parseInt(transport_line_id)]]);
+    inParams.push([]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line.image", "search_read", params, (err, images) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(images);
+      }
+    });
+  });
+}
+
 export async function getFuelLogList(odoo, vehicle_id) {
   return new Promise((resolve, reject) => {
     const inParams = [];

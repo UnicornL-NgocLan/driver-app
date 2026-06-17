@@ -10,5 +10,6 @@ router.delete("/logout", authCtrl.logout);
 router.get("/get-companies", authenticateUser, authCtrl.getUserCompanies);
 router.get("/get-user", authenticateUser, authCtrl.getUserData);
 router.patch("/change-company", authenticateUser, authCtrl.changeOdooCompany);
+router.get("/get-dropbox-access-token", authenticateUser,authCtrl.getDropBoxAccessToken);
 
 export default router.stack;

@@ -20,5 +20,6 @@ router.patch("/mark-as-done-reminder", authenticateUser, transportCtrl.markAsDon
 router.get("/get-fuel-log-list", authenticateUser, transportCtrl.getFuelLogList);
 router.post("/add-vehicle-fuel-log", authenticateUser, transportCtrl.createFuelLogLine);
 router.delete("/delete-vehicle-fuel-log/:id", authenticateUser, transportCtrl.deleteFuelLogLine);
+router.get("/get-transport-line-images", authenticateUser, transportCtrl.getTransportLineImages);
 
 export default router.stack;

@@ -21,6 +21,7 @@ import { ITransport, ITransportLine, IVehicle } from 'interface'
 import locale from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
+import { IoCameraOutline, IoClose } from 'react-icons/io5';
 import {
     DndContext, 
     closestCenter,
@@ -51,7 +52,8 @@ const Home = () => {
     const [historyTransport,setHistoryTransport] = useState<ITransport[]>([]);
     const companies = useSelector((state) => (state as any).companies);
     const auth = useSelector((state) => (state as any).auth);
-    const [isDragging, setIsDragging] = useState(false);
+    const [isDragging, setIsDragging] = useState<boolean>(false);
+    const [capturedImages, setCapturedImages] = useState<string[]>([]);
 
     const [open, setOpen] = useState<ITransportLine | false>(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
@@ -241,7 +243,94 @@ const Home = () => {
         setOpen(data);
         setDate(dayjs(new Date()));
         setTime(dayjs(new Date()));
+        setCapturedImages([]);
     };
+
+    const handleGetDropBoxAccessToken = async () => {
+        try {
+            const {data} = await app.get("/api/get-dropbox-access-token");
+            return data?.data
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+            setFetchData(false);
+        }
+    }
+
+    function generateFileName(dataUrl:string) {
+        const mime = dataUrl.match(/^data:(.*?);base64,/);
+
+        const ext = mime?.[1]?.split("/")[1] || "jpg";
+
+        return `${Date.now()}-${Math.random()
+            .toString(36)
+            .substring(2, 10)}.${ext}`;
+    }   
+
+    const upLoadBase64ToDropBox = async (dataUrl:string,accessToken:string) =>{
+        try {
+            const base64Data = dataUrl.split(",")[1];
+            const fileName = generateFileName(dataUrl);
+            
+            const binaryString = window.atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            const buffer = bytes.buffer;
+            
+            const response = await fetch(
+                "https://content.dropboxapi.com/2/files/upload",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        "Content-Type": "application/octet-stream",
+                        "Dropbox-API-Arg": JSON.stringify({
+                            path: `/images/${fileName}`,
+                            mode: "add",
+                            autorename: true
+                        })
+                    },
+                    body: buffer
+                }
+            );
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+            setFetchData(false);
+        }
+    }
+
+    const handleShareLink = async (file_path:string,accessToken:string) => {
+        try {
+            const response = await fetch(
+                "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${accessToken}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        path: file_path,
+                        settings: {
+                            requested_visibility: "public"
+                        }
+                    })
+                }
+            );
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+            setFetchData(false);
+        }
+    }   
 
     const handleConfirmDeliveryTime = async () => {
         try {
@@ -249,13 +338,40 @@ const Home = () => {
                 alert("Vui lòng chọn thời điểm giao hàng");
                 return;
             }
+            if(capturedImages.length === 0){
+                alert("Vui lòng chụp ít nhất 1 hình ảnh đính kèm!");
+                return;
+            }
+
+            setConfirmLoading(true);
+
+            const dropBoxAccessToken = await handleGetDropBoxAccessToken();
+            if(!dropBoxAccessToken){
+                alert("Không lấy được access token của Dropbox ")
+            }
+
+            const list_of_images_path = await Promise.all(capturedImages.map(async (image:string) => {
+                return await upLoadBase64ToDropBox(image,dropBoxAccessToken);
+            }));
+
+            const shared_links = await Promise.all(list_of_images_path.map(async (item:any) => {
+                return await handleShareLink(item.path_display,dropBoxAccessToken);
+            }));
+            
+            // Turn shared link to direct image URL
+            const directImageURLs = shared_links.map((link:any) => {
+                return link.url.replace("dl=0", "raw=1");
+            });
     
             const dateTime = dayjs(`${date.format('YYYY-MM-DD')} ${time.format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
             const substractedTime = moment(dateTime).subtract(7,'hours').format('YYYY-MM-DD HH:mm:ss');
-            setConfirmLoading(true);
             if (open) {
-                await app.patch(`/api/update-sea-transport-line`,{id:open.id,date_end:substractedTime});
                 setLoading(true);
+                await app.patch(`/api/update-sea-transport-line`,{
+                    id:open.id,
+                    date_end:substractedTime,
+                    images: directImageURLs
+                });
                 await handleFetchActiveTransportLines();
             }
         } catch (error) {
@@ -264,11 +380,32 @@ const Home = () => {
         } finally {
             setConfirmLoading(false);
             setOpen(false);
+            setCapturedImages([]);
         }
     };
 
     const handleCancel = () => {
         setOpen(false);
+        setCapturedImages([]);
+    };
+    
+    const handleCaptureImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (files) {
+            Array.from(files).forEach((file) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64String = reader.result as string;
+                    setCapturedImages((prev) => [...prev, base64String]);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        e.target.value = '';
+    };
+
+    const handleRemoveImage = (indexToRemove: number) => {
+        setCapturedImages((prev) => prev.filter((_, index) => index !== indexToRemove));
     };
     
     const handleChangeIndex = async (i:number) => {
@@ -467,10 +604,12 @@ const Home = () => {
             <div style={{padding:'1rem 0'}}><Empty/></div>
         }
         {open && <Modal
-            title="Xác nhận thời điểm giao hàng"
+            title="Xác nhận giao hàng"
             open={!!open}
             okButtonProps={{style:{background:myColor.buttonColor}}}
             cancelText="Hủy"
+            cancelButtonProps={{disabled: confirmLoading}}
+            closable={!confirmLoading}
             centered
             maskClosable={false}
             okText="Xác nhận"
@@ -480,7 +619,7 @@ const Home = () => {
             onCancel={handleCancel}
         >
             <ConfigProvider locale={locale}>
-                <div style={{display:'flex', gap:10,width:'100%'}}>
+                <div style={{display:'none', gap:10,width:'100%'}}>
                     <DatePicker
                     style={{width:'100%',margin:'1rem 0',flex:1}}	
                     format="DD-MM-YYYY"
@@ -502,6 +641,73 @@ const Home = () => {
                         setTime(dayjs(value, 'hh:mm:ss'))
                     }}
                     />
+                </div>
+                
+                <div style={{ marginTop: 8, marginBottom: 16 }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 8 }}>
+                        <span style={{ fontWeight: 600 }}>Hình ảnh đính kèm:</span>
+                        <label 
+                            htmlFor="camera-input" 
+                            style={{
+                                display: confirmLoading ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                padding: '8px 16px', background: myColor.buttonColor,
+                                color: 'white', borderRadius: 4, cursor: 'pointer',
+                                fontSize: 14, fontWeight: 500, width: 'fit-content'
+                            }}
+                        >
+                            <IoCameraOutline style={{ fontSize: 20 }} />
+                            <span>Chụp hình</span>
+                        </label>
+                        <input
+                            id="camera-input"
+                            type="file"
+                            accept="image/*"
+                            capture="environment"
+                            multiple
+                            style={{ display: 'none' }}
+                            onChange={handleCaptureImage}
+                        />
+                    </div>
+                    
+                    {capturedImages.length > 0 && (
+                        <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fill, minmax(80px, 1fr))',
+                            gap: 10,
+                            marginTop: 12
+                        }}>
+                            {capturedImages.map((img, index) => (
+                                <div key={index} style={{
+                                    position: 'relative',
+                                    aspectRatio: '1',
+                                    borderRadius: 6,
+                                    border: '1px solid #d9d9d9',
+                                    overflow: 'hidden'
+                                }}>
+                                    <img 
+                                        src={img} 
+                                        alt={`Captured ${index}`} 
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                                    />
+                                    <div
+                                        onClick={() => !confirmLoading && handleRemoveImage(index)}
+                                        style={{
+                                            position: 'absolute',
+                                            top: 4, right: 4,
+                                            width: 20, height: 20,
+                                            borderRadius: '50%',
+                                            background: 'rgba(0,0,0,0.6)',
+                                            color: 'white',
+                                            display: confirmLoading ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer'
+                                        }}
+                                    >
+                                        <IoClose style={{ fontSize: 14 }} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </ConfigProvider>
         </Modal>}

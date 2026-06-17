@@ -13,6 +13,7 @@ import {
   getAllWarningReminder,
   getAllReminders,
   getFuelLogList,
+  getTransportLineImages,
 } from "../utils/getOdooUserData.js";
 import {
   updateActualEndDate,
@@ -23,6 +24,7 @@ import {
   markAsDoneReminderLine,
   addVehicleFuelLogValue,
   deleteVehicleFuelLogValue,
+  createTransportLineImage,
 } from "../utils/updateOdooUserData.js";
 
 export const transportCtrl = {
@@ -79,11 +81,21 @@ export const transportCtrl = {
 
   handleDoneTransportLine: async (req, res) => {
     try {
-      const { id, date_end } = req.body;
+      const { id, date_end, images } = req.body;
       const updateData = { date_end_actual: date_end };
       const result = await checkCurrentTransportLineIsDone(req.odoo, id);
       if (result.length > 0) return res.status(400).json({ msg: "Dữ liệu đơn hàng này đã có ai đó tác động. Vui lòng tải lại trang!" });
       await updateActualEndDate(req.odoo, updateData, id);
+
+      if (images && images.length > 0) {
+        for (const img of images) {
+          await createTransportLineImage(req.odoo, {
+            transport_line_id: parseInt(id),
+            image_url: img
+          });
+        }
+      }
+
       await doneTransportLine(req.odoo, id);
       res.status(200).json({ data: "Cập nhật thành công!" });
     } catch (error) {
@@ -246,6 +258,18 @@ export const transportCtrl = {
       if (!id) return res.status(400).json({ msg: "Vui lòng cung cấp dòng cần xóa!" });
       await deleteVehicleFuelLogValue(req.odoo, id);
       res.status(200).json({ msg: "Đã xóa thành công!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
+  getTransportLineImages: async (req, res) => {
+    try {
+      const { transport_line_id } = req.query;
+      if (!transport_line_id) return res.status(400).json({ msg: "Vui lòng cung cấp transport line!" });
+      const data = await getTransportLineImages(req.odoo, transport_line_id);
+      res.status(200).json({ data });
     } catch (error) {
       console.log(error);
       res.status(500).json({ msg: error.message });
