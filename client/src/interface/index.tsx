@@ -9,6 +9,7 @@ export interface ITransportLine {
     address_start: string,
     id: number,
     item_type:string,
+    picking_id?: any,
     name: string,
     partner_id: any,
     state:string,

@@ -29,6 +29,27 @@ export async function getUserCompanies(odoo, user) {
   });
 }
 
+export async function getAllReadyTransport(odoo, company_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([
+      ["company_id", "=", parseInt(company_id)],
+      ["state", "in", ["ready", "start"]],
+    ]);
+    inParams.push(["id", "name", "state", "vehicle_id", "sea_driver_id"]);
+    inParams.push(0); //offset
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport", "search_read", params, (err, assets) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(assets);
+      }
+    });
+  });
+}
+
 export async function getAllActiveTransport(odoo, company_id) {
   return new Promise((resolve, reject) => {
     const inParams = [];
@@ -80,7 +101,7 @@ export async function getAllTransportLine(odoo, id, getAll = false) {
       ["transport_id", "=", parseInt(id)],
       ["state", "in", condition],
     ]);
-    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note"]);
+    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note", "picking_id"]);
     inParams.push(0);
     const params = [];
     params.push(inParams);
@@ -297,6 +318,108 @@ export async function getFuelLogList(odoo, vehicle_id) {
       } else {
         resolve(assets);
       }
+    });
+  });
+}
+
+export async function getPickingByQR(odoo, qrContent, companyId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([
+      ["name", "=", qrContent],
+      ["company_id", "=", parseInt(companyId)],
+      ["state", "in", ["confirmed", "assigned"]]
+    ]);
+    inParams.push(["id", "name", "location_id", "location_dest_id"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.picking", "search_read", params, (err, pickings) => {
+      if (err) reject(err);
+      else resolve(pickings);
+    });
+  });
+}
+
+export async function getTransportWarehouses(odoo, transportId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(transportId)]]);
+    inParams.push(["id", "warehouse_id", "picking_ids"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport", "search_read", params, (err, transports) => {
+      if (err) reject(err);
+      else resolve(transports);
+    });
+  });
+}
+
+export async function getLocationWarehouses(odoo, locationIds) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "in", locationIds]]);
+    inParams.push(["id", "warehouse_id"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.location", "search_read", params, (err, locations) => {
+      if (err) reject(err);
+      else resolve(locations);
+    });
+  });
+}
+
+export async function getTransportById(odoo, transportId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(transportId)]]);
+    inParams.push(["id", "name", "state", "vehicle_id", "sea_driver_id", "date_start_actual"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport", "search_read", params, (err, transports) => {
+      if (err) reject(err);
+      else resolve(transports);
+    });
+  });
+}
+
+export async function getTransportLineByTransportAndPicking(odoo, transportId, pickingId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([
+      ["transport_id", "=", parseInt(transportId)],
+      ["picking_id", "=", parseInt(pickingId)],
+      ["state", "in", ["ready"]]
+    ]);
+    inParams.push(["id"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line", "search_read", params, (err, lines) => {
+      if (err) reject(err);
+      else resolve(lines);
+    });
+  });
+}
+
+export async function checkActiveTransportLineForPicking(odoo, pickingId,transport_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([
+      ["picking_id", "=", parseInt(pickingId)],
+      ["state", "!=", "cancel"],
+      ["transport_id", "=", parseInt(transport_id)]
+    ]);
+    inParams.push(["id"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line", "search_read", params, (err, lines) => {
+      if (err) reject(err);
+      else resolve(lines);
     });
   });
 }

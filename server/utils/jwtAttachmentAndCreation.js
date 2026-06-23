@@ -13,6 +13,6 @@ export const attachCookiesToResponse = ({ res, data }) => {
     maxAge: 1000 * 60 * 60 * 24 * 365,
     secure: process.env.NODE_ENV === "production",
     sign: true,
-    // sameSite: "none"
+    sameSite: "none"
   });
 };

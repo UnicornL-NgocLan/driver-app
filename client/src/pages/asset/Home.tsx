@@ -15,13 +15,13 @@ import yellow from '../../images/circle.png'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import Empty from 'widgets/Empty'
-import { ConfigProvider, DatePicker, List, Modal, TimePicker } from 'antd'
+import { ConfigProvider, DatePicker, List, Modal, TimePicker, Tag, Button } from 'antd'
 import TransportLine from './components/TransportLine'
 import { ITransport, ITransportLine, IVehicle } from 'interface'
 import locale from 'antd/locale/vi_VN';
 import dayjs from 'dayjs';
 import 'dayjs/locale/vi';
-import { IoCameraOutline, IoClose } from 'react-icons/io5';
+import { IoArrowBack, IoCameraOutline, IoClose } from 'react-icons/io5';
 import {
     DndContext, 
     closestCenter,
@@ -43,6 +43,7 @@ import SeaTransport from './components/SeaTransport'
 import { getDrivers } from '../../redux/reducers/driverReducer'
 import moment from 'moment'
 import VehicleList from './components/VehicleList'
+import ScannerModal from './components/ScannerModal'
 
 const Home = () => {
     const dispatch = useDispatch();
@@ -50,10 +51,15 @@ const Home = () => {
     const [loading,setLoading] = useState(false);
     const [activeTransportLines, setActiveTransportLines] = useState<ITransportLine[]>([]);
     const [historyTransport,setHistoryTransport] = useState<ITransport[]>([]);
+    const [readyTransports, setReadyTransports] = useState<ITransport[]>([]);
+    const [selectedTransport, setSelectedTransport] = useState<ITransport | null>(null);
     const companies = useSelector((state) => (state as any).companies);
     const auth = useSelector((state) => (state as any).auth);
+    const drivers = useSelector((state:any) => state.drivers) as any[];
     const [isDragging, setIsDragging] = useState<boolean>(false);
     const [capturedImages, setCapturedImages] = useState<string[]>([]);
+
+    const [openScanner, setOpenScanner] = useState<boolean>(false);
 
     const [open, setOpen] = useState<ITransportLine | false>(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
@@ -82,6 +88,27 @@ const Home = () => {
           }),
       );
 
+    const handleShowDrivers = (idList:number[]) => {
+        if(idList.length === 0) return <></>
+        const officeList = [...idList].map((id)=>{
+            const transportDrivers = drivers.find((item: {id:number,name:string}) => item.id === id);
+            if(!transportDrivers) return <></>
+            return <Tag style={{margin:0,fontSize:13,marginRight:5}} key={transportDrivers.id}>{transportDrivers?.name}</Tag>
+        })
+
+        return officeList
+    }
+
+    const renderState = (state: string) => {
+        switch(state) {
+            case 'ready': return <Tag color="blue">Sẵn sàng</Tag>;
+            case 'start': return <Tag color="orange">Đang giao</Tag>;
+            case 'done': return <Tag color="green">Hoàn thành</Tag>;
+            case 'cancel': return <Tag color="red">Đã hủy</Tag>;
+            default: return <Tag>{state}</Tag>;
+        }
+    }
+
     const fetchCompanies = async () => {
         try {
             const {data} = await app.get("/api/get-companies");
@@ -99,6 +126,8 @@ const Home = () => {
         try {
             setFetchData(true);
             setActiveTransportLines([])
+            setReadyTransports([]);
+            setSelectedTransport(null);
             await app.patch("/api/change-company",{companyId:id})
             await fetchAllNecessaryData();
         } catch (error) {
@@ -119,24 +148,98 @@ const Home = () => {
         }
     }
 
-    const handleFetchActiveTransportLines = async (driver_id?:number) => {
+    const handleFetchReadyTransports = async (driver_id?:number) => {
         try {
             if(auth && auth.partner_id){
-                const {data} = await app.get(`/api/get-active-transport?id=${auth.driver || driver_id}&company_id=${auth.company_id[0]}`);
+                const {data} = await app.get(`/api/get-ready-transport?id=${auth.driver || driver_id}&company_id=${auth.company_id[0]}`);
                 if(data?.data && data?.data.length > 0){
-                    const transportLines = (data?.data as {[key:string]:any} []).map(line => line.id).map(async (id:number) => {
-                        return app.get(`/api/get-transport-line?id=${id}`)
-                    })
-                    const results = await Promise.all([...transportLines]);
-                    setActiveTransportLines(results[0]?.data?.data);
+                    setReadyTransports(data.data);
                 }else {
-                    setActiveTransportLines([]);
+                    setReadyTransports([]);
                 }
             }
         } catch (error) {
             const message = getErrorMessage(error);
             alert(message);
             setFetchData(false);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleFetchTransportLines = async (transportId:number) => {
+        try {
+            setLoading(true);
+            const {data} = await app.get(`/api/get-transport-line?id=${transportId}`);
+            if(data?.data){
+                setActiveTransportLines(data.data);
+            }else {
+                setActiveTransportLines([]);
+            }
+            
+            // Refetch the transport record
+            const transportRes = await app.get(`/api/get-transport/${transportId}`);
+            if(transportRes.data?.data) {
+                setSelectedTransport(transportRes.data.data);
+            }
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleSelectTransport = async (transport:ITransport) => {
+        setSelectedTransport(transport);
+        await handleFetchTransportLines(transport.id);
+    }
+
+    const handleScanQR = async (result: string) => {
+        setOpenScanner(false);
+        try {
+            setLoading(true);
+            const { data } = await app.post("/api/add-picking-by-qr", {
+                qr_content: result,
+                transport_id: selectedTransport?.id
+            });
+            alert(data.msg);
+            if(selectedTransport){
+                await handleFetchTransportLines(selectedTransport.id);
+            }
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const handleBackToTransportList = async () => {
+        setLoading(true);
+        setSelectedTransport(null);
+        setActiveTransportLines([]);
+        if (driver) {
+            await handleFetchReadyTransports(driver);
+        } else {
+            await handleFetchReadyTransports();
+        }
+    }
+
+    const handleStartTransport = async (transportId: number) => {
+        try {
+            setLoading(true);
+            await app.patch("/api/start-transport", { id: transportId });
+            if(selectedTransport){
+                setSelectedTransport({...selectedTransport, state: 'start'});
+            }
+            if(driver){
+                await handleFetchReadyTransports(driver);
+            }
+            await handleFetchTransportLines(transportId);
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
         } finally {
             setLoading(false);
         }
@@ -214,7 +317,7 @@ const Home = () => {
             ])
             const driver_id = await handleGetSeaDriver();
             setDriver(driver_id);
-            await handleFetchActiveTransportLines(driver_id);
+            await handleFetchReadyTransports(driver_id);
         } catch (error) {
             const message = getErrorMessage(error);
             alert(message);
@@ -372,7 +475,9 @@ const Home = () => {
                     date_end:substractedTime,
                     images: directImageURLs
                 });
-                await handleFetchActiveTransportLines();
+                if(selectedTransport){
+                    await handleFetchTransportLines(selectedTransport.id);
+                }
             }
         } catch (error) {
             const message = getErrorMessage(error);
@@ -410,6 +515,8 @@ const Home = () => {
     
     const handleChangeIndex = async (i:number) => {
         setDefaultIndex(i);
+        setSelectedTransport(null);
+        setActiveTransportLines([]);
         if(i === 0){
             setLoading(true);
             await handleFetchVehicle();
@@ -417,7 +524,7 @@ const Home = () => {
         } else
         if(i === -1){
             setLoading(true);
-            await handleFetchActiveTransportLines();
+            await handleFetchReadyTransports();
         } else if(i === 1){ 
             setLoading(true);
             await handleFetchTransport();
@@ -440,7 +547,9 @@ const Home = () => {
             if(window.confirm("Bạn có chắc chắn muốn hủy đơn hàng này không?")){
                 setLoading(true);
                 await app.patch(`/api/cancel-sea-transport-line`,{id:data.id});
-                await handleFetchActiveTransportLines();
+                if(selectedTransport){
+                    await handleFetchTransportLines(selectedTransport.id);
+                }
             }
         } catch (error) {
             const message = getErrorMessage(error);
@@ -462,7 +571,9 @@ const Home = () => {
                     lines:[...newOrder].map((line:ITransportLine) => ({id:line.id})),
                     transportId: newOrder[0].transport_id,
                 });
-                await handleFetchActiveTransportLines();
+                if(selectedTransport){
+                    await handleFetchTransportLines(selectedTransport.id);
+                }
             }
 
             setIsDragging(false);
@@ -484,14 +595,18 @@ const Home = () => {
     },[]);
 
     useEffect(()=>{
-        let interval = setInterval(() => {
-            if(defaultIndex === -1 && driver && !isDragging){
-                handleFetchActiveTransportLines(driver);
-            }
-        },1000 * 60)
+        // let interval = setInterval(() => {
+        //     if(defaultIndex === -1 && driver && !isDragging){
+        //         if(selectedTransport){
+        //             handleFetchTransportLines(selectedTransport.id);
+        //         } else {
+        //             handleFetchReadyTransports(driver);
+        //         }
+        //     }
+        // },1000 * 60)
 
-        return () => clearInterval(interval)
-    },[defaultIndex,driver])
+        // return () => clearInterval(interval)
+    },[defaultIndex,driver,selectedTransport])
      
     if(fetchData){
         return <PageLoading/>
@@ -521,9 +636,45 @@ const Home = () => {
                 />
             </div>
             :
-            defaultIndex === -1 && activeTransportLines.length > 0
+            defaultIndex === -1 && selectedTransport
             ?
             <div style={{padding:'1rem 1rem 55px'}}>
+                <div 
+                    onClick={handleBackToTransportList}
+                    style={{display:'flex',alignItems:'center',gap:6,marginBottom:12,cursor:'pointer',color:'#1677ff',fontWeight:600,fontSize:15}}
+                >
+                    <IoArrowBack style={{fontSize:18}}/>
+                    <span>Quay lại danh sách chuyến</span>
+                </div>
+                <div style={{marginBottom:12,padding:10,background:'white',borderRadius:5,boxShadow:'2px 2px 1px rgba(0,0,0,0.2)'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                        <span style={{fontWeight:700,fontSize:15}}>{selectedTransport.name}</span>
+                        {['start', 'ready'].includes(selectedTransport.state) && (
+                            <Button 
+                                type="dashed" 
+                                style={{color: myColor.buttonColor, borderColor: myColor.buttonColor}}
+                                onClick={() => setOpenScanner(true)}
+                            >
+                                + Thêm đơn
+                            </Button>
+                        )}
+                    </div>
+                    {selectedTransport.vehicle_id && <span style={{fontSize:14,display:'block',marginTop:4}}><span style={{fontWeight:600}}>Phương tiện: </span>{selectedTransport.vehicle_id[1]}</span>}
+                    {selectedTransport.state === 'ready' && !readyTransports.some(t => t.state === 'start') && 
+                        <Button 
+                            type="primary" 
+                            style={{marginTop: 8, background: myColor.buttonColor}}
+                            onClick={() => {
+                                if (window.confirm("Bạn có chắc chắn muốn bắt đầu giao hàng?")) {
+                                    handleStartTransport(selectedTransport.id);
+                                }
+                            }}
+                            block
+                        >
+                            Bắt đầu giao hàng
+                        </Button>
+                    }
+                </div>
                 <DndContext 
                 sensors={sensors}
                 collisionDetection={closestCenter}
@@ -548,6 +699,36 @@ const Home = () => {
                     })}
                     </SortableContext>
                 </DndContext>
+            </div>
+            :
+            defaultIndex === -1 && !selectedTransport && readyTransports.length > 0
+            ?
+            <div style={{padding:'1rem 1rem 55px'}}>
+                <List
+                    itemLayout="horizontal"
+                    dataSource={readyTransports}
+                    renderItem={(item) => (
+                        <List.Item 
+                            onClick={() => handleSelectTransport(item)}
+                            style={{display:'block',background:'white',marginBottom:20,borderRadius:5, boxShadow:'2px 2px 1px rgba(0,0,0,0.2)',padding:10,cursor:'pointer'
+                            }}>
+                            <List.Item.Meta
+                                title={<span style={{margin:0, fontSize:14,fontWeight:700}}>{item.name}</span>}
+                            />
+                            <div style={{display:'flex',flexDirection:'column',gap:8, marginTop:4}}>
+                                {item.sea_driver_id && <span style={{fontSize:14}}>
+                                    <span style={{fontWeight:600}}>Tài xế: </span> {handleShowDrivers(item.sea_driver_id)}
+                                </span>}
+                                {item.vehicle_id && <span style={{fontSize:14}}>
+                                    <span style={{fontWeight:600}}>Phương tiện: </span>{item.vehicle_id[1]}
+                                </span>}
+                                {item.state && <span style={{fontSize:14}}>
+                                    <span style={{fontWeight:600}}>Trạng thái: </span>{renderState(item.state)}
+                                </span>}
+                            </div>
+                        </List.Item>
+                    )}
+                />
             </div>
             :
             defaultIndex === 1 && historyTransport.length > 0 
@@ -711,6 +892,13 @@ const Home = () => {
                 </div>
             </ConfigProvider>
         </Modal>}
+        
+        <ScannerModal 
+            open={openScanner}
+            onCancel={() => setOpenScanner(false)}
+            onScan={handleScanQR}
+        />
+
         <BottomNavigator id={defaultIndex} handleChangeIndex = {handleChangeIndex}/>
     </div>
   )

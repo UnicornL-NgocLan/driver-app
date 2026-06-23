@@ -5,11 +5,15 @@ import { transportCtrl } from "../controllers/transportController.js";
 const router = express.Router();
 
 router.get("/get-active-transport", authenticateUser, transportCtrl.getActiveTransport);
+router.get("/get-ready-transport", authenticateUser, transportCtrl.getReadyTransport);
 router.get("/get-transport-line", authenticateUser, transportCtrl.getActiveTransportLine);
 router.get("/get-sea-driver", authenticateUser, transportCtrl.getSeaDriver);
 router.get("/get-all-sea-driver", authenticateUser, transportCtrl.getAllSeaDriver);
-router.patch("/update-sea-transport-line", authenticateUser, otherUserAuthorize, transportCtrl.handleDoneTransportLine);
-router.patch("/cancel-sea-transport-line", authenticateUser, otherUserAuthorize, transportCtrl.handleCancelTransportLine);
+router.patch("/update-sea-transport-line", authenticateUser, transportCtrl.handleDoneTransportLine);
+router.patch("/cancel-sea-transport-line", authenticateUser, transportCtrl.handleCancelTransportLine);
+router.patch("/start-transport", authenticateUser, transportCtrl.handleStartTransport);
+router.post("/add-picking-by-qr", authenticateUser, transportCtrl.handleAddPickingByQR);
+router.get("/get-transport/:id", authenticateUser, transportCtrl.getTransportById);
 router.get("/get-vehicle-list", authenticateUser, otherUserAuthorize, transportCtrl.getAllVehicles);
 router.patch("/update-sequence-sea-transport-line", authenticateUser, otherUserAuthorize, transportCtrl.updateSequenceTransportLine);
 router.post("/add-vehicle-odometer-value", authenticateUser, transportCtrl.addVehicleOdometerValue);

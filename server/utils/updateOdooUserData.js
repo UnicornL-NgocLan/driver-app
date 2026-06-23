@@ -60,6 +60,20 @@ export async function cancelTransportLine(odoo, uid) {
   });
 }
 
+export async function startTransport(odoo, uid) {
+  return new Promise((resolve, reject) => {
+    let params = [];
+    params.push([parseInt(uid)]);
+    odoo.execute_kw("sea.transport", "start_transport", params, function (err, user) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(user);
+      }
+    });
+  });
+}
+
 export async function updateSequenceAndStatusTransportLine(odoo, data, uid) {
   return new Promise((resolve, reject) => {
     const inParams = [];
@@ -151,6 +165,23 @@ export async function createTransportLineImage(odoo, data) {
         reject(err);
       } else {
         resolve(recordId);
+      }
+    });
+  });
+}
+
+export async function addPickingToTransport(odoo, transportId, pickingIdsArray) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([parseInt(transportId)]);
+    inParams.push({ picking_ids: [[6, 0, pickingIdsArray]] });
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport", "write", params, function (err, result) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
       }
     });
   });

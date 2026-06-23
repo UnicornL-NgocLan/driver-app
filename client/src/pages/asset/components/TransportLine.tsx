@@ -13,6 +13,9 @@ const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder}:{data
                 title={<span style={{margin:0, fontSize:14,fontWeight:700}}>{data.name}</span>}
                 />
                 <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {data.picking_id && <span style={{fontSize:14}}>
+                        <span style={{fontWeight:500}}>Phiếu kho: </span><span>{data.picking_id[1]}</span>
+                    </span>}
                     {data.item_type && <span style={{fontSize:14}}>
                         <span style={{fontWeight:500}}>Hàng hóa: </span><span>{data.item_type}</span>
                     </span>}
