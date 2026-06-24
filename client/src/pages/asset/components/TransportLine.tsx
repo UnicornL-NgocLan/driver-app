@@ -3,7 +3,7 @@ import { ITransportLine } from 'interface'
 import { myColor } from 'color'
 
 
-const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder}:{data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,isDragging:boolean}) => {
+const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handleUpdateAddressEnd}:{data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,handleUpdateAddressEnd:(i:ITransportLine)=>void,isDragging:boolean}) => {
   return (
         <List.Item 
             style={{
@@ -31,21 +31,29 @@ const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder}:{data
                     {data.note && <span style={{fontSize:14}}>
                         <span style={{fontWeight:500}}>Ghi chú: </span><span>{data.note}</span>
                     </span>}
-                    {data.state === 'start' && <Button 
-                    disabled={isDragging}
-                    onClick={() => showTimePicker(data)}
-                    color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.buttonColor, fontWeight:500}}>
-                        Giao hàng
-                    </Button>}
-                    {data.state === 'ready' && <Button 
-                    disabled={isDragging}
-                    onClick={() => handleCancelOrder(data)}
-                    color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.dangerColor, fontWeight:500}}>
-                        Hủy đơn
-                    </Button>}
+                    <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+                        {data.state === 'start' && <Button 
+                        disabled={isDragging}
+                        onClick={() => showTimePicker(data)}
+                        color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.buttonColor, fontWeight:500}}>
+                            Giao hàng
+                        </Button>}
+                        {data.state === 'ready' && <Button 
+                        disabled={isDragging}
+                        onClick={() => handleCancelOrder(data)}
+                        color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.dangerColor, fontWeight:500}}>
+                            Hủy đơn
+                        </Button>}
+                        {['start','ready'].includes(data.state) && <Button 
+                        disabled={isDragging}
+                        onClick={() => handleUpdateAddressEnd(data)}
+                        color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : '#1677ff', fontWeight:500}}>
+                            Cập nhật địa chỉ đến
+                        </Button>}
+                    </div>
                 </div>
         </List.Item>
   )
 }
 
-export default TransportLine
+export default TransportLine

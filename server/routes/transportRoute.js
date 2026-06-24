@@ -10,6 +10,7 @@ router.get("/get-transport-line", authenticateUser, transportCtrl.getActiveTrans
 router.get("/get-sea-driver", authenticateUser, transportCtrl.getSeaDriver);
 router.get("/get-all-sea-driver", authenticateUser, transportCtrl.getAllSeaDriver);
 router.patch("/update-sea-transport-line", authenticateUser, transportCtrl.handleDoneTransportLine);
+router.patch("/update-address-end", authenticateUser, transportCtrl.handleUpdateAddressEnd);
 router.patch("/cancel-sea-transport-line", authenticateUser, transportCtrl.handleCancelTransportLine);
 router.patch("/start-transport", authenticateUser, transportCtrl.handleStartTransport);
 router.post("/add-picking-by-qr", authenticateUser, transportCtrl.handleAddPickingByQR);

@@ -127,6 +127,19 @@ export const transportCtrl = {
     }
   },
 
+  handleUpdateAddressEnd: async (req, res) => {
+    try {
+      const { id, address_end } = req.body;
+      if (!id) return res.status(400).json({ msg: "Vui lòng cung cấp ID đơn hàng!" });
+      if (!address_end || !address_end.trim()) return res.status(400).json({ msg: "Vui lòng nhập địa chỉ đến!" });
+      await updateActualEndDate(req.odoo, { address_end: address_end.trim() }, id);
+      res.status(200).json({ msg: "Cập nhật địa chỉ đến thành công!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
   handleCancelTransportLine: async (req, res) => {
     try {
       const { id } = req.body;
