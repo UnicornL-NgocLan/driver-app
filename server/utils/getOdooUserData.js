@@ -328,7 +328,7 @@ export async function getPickingByQR(odoo, qrContent, companyId) {
     inParams.push([
       ["name", "=", qrContent],
       ["company_id", "=", parseInt(companyId)],
-      ["state", "in", ["confirmed", "assigned"]]
+      ["state", "in", ["confirmed", "assigned","done"]]
     ]);
     inParams.push(["id", "name", "location_id", "location_dest_id"]);
     inParams.push(0);

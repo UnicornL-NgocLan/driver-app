@@ -170,76 +170,114 @@ export const transportCtrl = {
       const { qr_content, transport_id } = req.body;
       const company_id = req.user[0].company_id[0];
 
-      // 1. Tìm stock.picking
-      const pickings = await getPickingByQR(req.odoo, qr_content, company_id);
-      if (!pickings || pickings.length === 0) {
-        return res.status(400).json({ msg: "Không tìm thấy đơn hàng hoặc đơn hàng không hợp lệ (cần ở trạng thái confirmed/assigned và thuộc công ty hiện tại)." });
-      }
-      const picking = pickings[0];
+      // Tách nội dung QR theo dấu phẩy để hỗ trợ nhiều mã stock picking
+      const pickingNames = qr_content
+        .split(",")
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0);
 
-      const activeLines = await checkActiveTransportLineForPicking(req.odoo, picking.id,transport_id);
-      if (activeLines && activeLines.length > 0) {
-        return res.status(400).json({ msg: "Đơn hàng này đã có trong một chuyến xe." });
+      if (pickingNames.length === 0) {
+        return res.status(400).json({ msg: "Nội dung QR không hợp lệ." });
       }
 
-      // 2. Đọc transport's warehouse_id
+      // Đọc transport's warehouse_id (chỉ cần lấy 1 lần)
       const transport = await getTransportWarehouses(req.odoo, transport_id);
       if (!transport || transport.length === 0) {
         return res.status(400).json({ msg: "Không tìm thấy chuyến xe hiện tại." });
       }
-      let warehouseIds = transport[0].warehouse_id;
+      const warehouseIds = transport[0].warehouse_id;
 
-      // 3. Lấy kho của location_id và location_dest_id
-      const locationIds = [];
-      if (picking.location_id) locationIds.push(picking.location_id[0]);
-      if (picking.location_dest_id) locationIds.push(picking.location_dest_id[0]);
+      const successList = [];
+      const errorList = [];
 
-      let foundWarehouse = false;
-      if (locationIds.length > 0) {
-        const locations = await getLocationWarehouses(req.odoo, locationIds);
-        for (const loc of locations) {
-          if (loc.warehouse_id && loc.warehouse_id[0]) {
-            if (warehouseIds.includes(loc.warehouse_id[0])) {
-              foundWarehouse = true;
-              break;
+      for (const pickingName of pickingNames) {
+        try {
+          // 1. Tìm stock.picking
+          const pickings = await getPickingByQR(req.odoo, pickingName, company_id);
+          if (!pickings || pickings.length === 0) {
+            errorList.push(`${pickingName}: Không tìm thấy hoặc không hợp lệ`);
+            continue;
+          }
+          const picking = pickings[0];
+
+          // 2. Kiểm tra đã có trong chuyến xe chưa
+          const activeLines = await checkActiveTransportLineForPicking(req.odoo, picking.id, transport_id);
+          if (activeLines && activeLines.length > 0) {
+            errorList.push(`${pickingName}: Đã có trong chuyến xe`);
+            continue;
+          }
+
+          // 3. Kiểm tra kho
+          const locationIds = [];
+          if (picking.location_id) locationIds.push(picking.location_id[0]);
+          if (picking.location_dest_id) locationIds.push(picking.location_dest_id[0]);
+
+          let foundWarehouse = false;
+          if (locationIds.length > 0) {
+            const locations = await getLocationWarehouses(req.odoo, locationIds);
+            for (const loc of locations) {
+              if (loc.warehouse_id && loc.warehouse_id[0]) {
+                if (warehouseIds.includes(loc.warehouse_id[0])) {
+                  foundWarehouse = true;
+                  break;
+                }
+              }
             }
           }
+
+          if (!foundWarehouse) {
+            errorList.push(`${pickingName}: Kho không nằm trong danh sách kho của chuyến xe`);
+            continue;
+          }
+
+          // 4. Thêm picking vào picking_ids của transport
+          // Lấy danh sách các transport line hiện tại (bao gồm cả cancel)
+          const tLinesAll = await getAllTransportLine(req.odoo, transport_id, true);
+          let activePickings = [];
+          if (tLinesAll && tLinesAll.length > 0) {
+            // Chỉ lấy picking_id của các line KHÔNG bị hủy.
+            // Tránh truyền lại picking_id đã hủy khiến Odoo tự động tạo lại line cho chúng.
+            activePickings = tLinesAll
+              .filter(line => line.state !== 'cancel' && line.picking_id)
+              .map(line => line.picking_id[0]);
+          }
+          activePickings = activePickings.filter(id => id !== picking.id);
+          activePickings.push(picking.id);
+          await addPickingToTransport(req.odoo, transport_id, activePickings);
+
+          // 5. Tìm sea.transport.line vừa được tạo và cập nhật date_end_expected
+          const tLines = await getTransportLineByTransportAndPicking(req.odoo, transport_id, picking.id);
+          if (tLines && tLines.length > 0) {
+            const lineId = tLines[0].id;
+            const expectedDate = new Date();
+            expectedDate.setHours(expectedDate.getHours() + 12);
+
+            // Chuyển sang chuỗi YYYY-MM-DD HH:mm:ss chuẩn UTC
+            const dateStr = expectedDate.toISOString().replace('T', ' ').substring(0, 19);
+
+            await updateActualEndDate(req.odoo, { date_end_expected: dateStr }, lineId);
+          }
+
+          successList.push(pickingName);
+        } catch (innerError) {
+          console.log(`Lỗi xử lý picking ${pickingName}:`, innerError);
+          errorList.push(`${pickingName}: ${innerError.message}`);
         }
       }
 
-      if (!foundWarehouse) {
-        return res.status(400).json({ msg: "Kho nhận hoặc giao của đơn hàng này không nằm trong danh sách kho của chuyến xe." });
+      // Tổng hợp kết quả
+      if (successList.length === 0 && errorList.length > 0) {
+        return res.status(400).json({
+          msg: `Không thêm được đơn hàng nào.\n${errorList.join("\n")}`,
+        });
       }
 
-      // 4. Thêm picking vào picking_ids của transport
-      // Lấy danh sách các transport line hiện tại (bao gồm cả cancel)
-      const tLinesAll = await getAllTransportLine(req.odoo, transport_id, true);
-      let activePickings = [];
-      if (tLinesAll && tLinesAll.length > 0) {
-        // Chỉ lấy picking_id của các line KHÔNG bị hủy. 
-        // Tránh truyền lại picking_id đã hủy khiến Odoo tự động tạo lại line cho chúng.
-        activePickings = tLinesAll
-          .filter(line => line.state !== 'cancel' && line.picking_id)
-          .map(line => line.picking_id[0]);
-      }
-      activePickings = activePickings.filter(id => id !== picking.id);
-      activePickings.push(picking.id);
-      await addPickingToTransport(req.odoo, transport_id, activePickings);
-      
-      // 5. Tìm sea.transport.line vừa được tạo và cập nhật date_end_expected
-      const tLines = await getTransportLineByTransportAndPicking(req.odoo, transport_id, picking.id);
-      if (tLines && tLines.length > 0) {
-        const lineId = tLines[0].id;
-        const expectedDate = new Date();
-        expectedDate.setHours(expectedDate.getHours() + 12);
-        
-        // Chuyển sang chuỗi YYYY-MM-DD HH:mm:ss chuẩn UTC
-        const dateStr = expectedDate.toISOString().replace('T', ' ').substring(0, 19);
-        
-        await updateActualEndDate(req.odoo, { date_end_expected: dateStr }, lineId);
+      let msg = `Đã thêm thành công ${successList.length} đơn hàng.`;
+      if (errorList.length > 0) {
+        msg += `\nLỗi (${errorList.length}):\n${errorList.join("\n")}`;
       }
 
-      res.status(200).json({ msg: "Thêm đơn hàng thành công!" });
+      res.status(200).json({ msg, successCount: successList.length, errorCount: errorList.length });
     } catch (error) {
       console.log(error);
       res.status(500).json({ msg: error.message });
