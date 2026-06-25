@@ -964,7 +964,7 @@ const Home = () => {
         </Modal>}
 
         {openAddressEnd && <Modal
-            title="Cập nhật địa chỉ đến"
+            title="Sửa địa chỉ đến"
             open={!!openAddressEnd}
             okButtonProps={{style:{background:'#1677ff'}}}
             cancelText="Hủy"
@@ -991,7 +991,7 @@ const Home = () => {
         </Modal>}
 
         {openAddressStart && <Modal
-            title="Cập nhật địa chỉ đi"
+            title="Sửa địa chỉ đi"
             open={!!openAddressStart}
             okButtonProps={{style:{background:'#1677ff'}}}
             cancelText="Hủy"

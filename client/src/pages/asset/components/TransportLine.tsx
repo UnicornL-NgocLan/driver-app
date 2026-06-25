@@ -48,13 +48,13 @@ const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handle
                         disabled={isDragging}
                         onClick={() => handleUpdateAddressStart(data)}
                         color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : '#13c2c2', fontWeight:500}}>
-                            Cập nhật địa chỉ đi
+                            Sửa địa chỉ đi
                         </Button>}
                         {['start','ready'].includes(data.state) && <Button 
                         disabled={isDragging}
                         onClick={() => handleUpdateAddressEnd(data)}
                         color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : '#1677ff', fontWeight:500}}>
-                            Cập nhật địa chỉ đến
+                            Sửa địa chỉ đến
                         </Button>}
                     </div>
                 </div>
@@ -62,4 +62,4 @@ const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handle
   )
 }
 
-export default TransportLine
+export default TransportLine
