@@ -3,7 +3,7 @@ import { ITransportLine } from 'interface'
 import { myColor } from 'color'
 
 
-const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handleUpdateAddressEnd}:{data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,handleUpdateAddressEnd:(i:ITransportLine)=>void,isDragging:boolean}) => {
+const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handleUpdateAddressEnd,handleUpdateAddressStart}:{data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,handleUpdateAddressEnd:(i:ITransportLine)=>void,handleUpdateAddressStart:(i:ITransportLine)=>void,isDragging:boolean}) => {
   return (
         <List.Item 
             style={{
@@ -43,6 +43,12 @@ const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handle
                         onClick={() => handleCancelOrder(data)}
                         color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : myColor.dangerColor, fontWeight:500}}>
                             Hủy đơn
+                        </Button>}
+                        {['start','ready'].includes(data.state) && <Button 
+                        disabled={isDragging}
+                        onClick={() => handleUpdateAddressStart(data)}
+                        color="default" variant="solid" style={{background:isDragging ? myColor.secondaryColor : '#13c2c2', fontWeight:500}}>
+                            Cập nhật địa chỉ đi
                         </Button>}
                         {['start','ready'].includes(data.state) && <Button 
                         disabled={isDragging}

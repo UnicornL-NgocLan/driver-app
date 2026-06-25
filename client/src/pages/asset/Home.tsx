@@ -65,6 +65,10 @@ const Home = () => {
     const [addressEndValue, setAddressEndValue] = useState<string>('');
     const [addressEndLoading, setAddressEndLoading] = useState(false);
 
+    const [openAddressStart, setOpenAddressStart] = useState<ITransportLine | false>(false);
+    const [addressStartValue, setAddressStartValue] = useState<string>('');
+    const [addressStartLoading, setAddressStartLoading] = useState(false);
+
     const [open, setOpen] = useState<ITransportLine | false>(false);
     const [confirmLoading, setConfirmLoading] = useState(false);
     const [date, setDate] = useState(dayjs(new Date()));
@@ -593,6 +597,36 @@ const Home = () => {
         }
     }
 
+    const handleOpenAddressStartModal = (data: ITransportLine) => {
+        setOpenAddressStart(data);
+        setAddressStartValue(data.address_start || '');
+    }
+
+    const handleUpdateAddressStart = async () => {
+        try {
+            if (!addressStartValue || !addressStartValue.trim()) {
+                alert('Vui lòng nhập địa chỉ đi!');
+                return;
+            }
+            if (!openAddressStart) return;
+            setAddressStartLoading(true);
+            await app.patch('/api/update-address-start', {
+                id: openAddressStart.id,
+                address_start: addressStartValue.trim(),
+            });
+            if (selectedTransport) {
+                await handleFetchTransportLines(selectedTransport.id);
+            }
+            setOpenAddressStart(false);
+            setAddressStartValue('');
+        } catch (error) {
+            const message = getErrorMessage(error);
+            alert(message);
+        } finally {
+            setAddressStartLoading(false);
+        }
+    }
+
     const handleDragEnd = async (event:any) => {
         try {
             const {active, over} = event;   
@@ -729,6 +763,7 @@ const Home = () => {
                             showTimePicker={showModal}
                             handleCancelOrder={handleCancelOrder}
                             handleUpdateAddressEnd={handleOpenAddressEndModal}
+                            handleUpdateAddressStart={handleOpenAddressStartModal}
                         />
                         );
                     })}
@@ -954,6 +989,33 @@ const Home = () => {
                 />
             </div>
         </Modal>}
+
+        {openAddressStart && <Modal
+            title="Cập nhật địa chỉ đi"
+            open={!!openAddressStart}
+            okButtonProps={{style:{background:'#1677ff'}}}
+            cancelText="Hủy"
+            cancelButtonProps={{disabled: addressStartLoading}}
+            closable={!addressStartLoading}
+            centered
+            maskClosable={false}
+            okText="Lưu"
+            closeIcon={!addressStartLoading}
+            onOk={handleUpdateAddressStart}
+            confirmLoading={addressStartLoading}
+            onCancel={() => { if (!addressStartLoading) { setOpenAddressStart(false); setAddressStartValue(''); } }}
+        >
+            <div style={{marginTop: 12}}>
+                <span style={{fontWeight: 600, marginBottom: 8, display: 'block'}}>Địa chỉ đi:</span>
+                <Input
+                    placeholder="Nhập địa chỉ đi"
+                    value={addressStartValue}
+                    onChange={(e) => setAddressStartValue(e.target.value)}
+                    disabled={addressStartLoading}
+                    allowClear
+                />
+            </div>
+        </Modal>}
         
         <ScannerModal 
             open={openScanner}
@@ -969,7 +1031,7 @@ const Home = () => {
 export default Home
 
 
-const SortableItem = ({isDragging, data, showTimePicker, handleCancelOrder, handleUpdateAddressEnd }: {data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,handleUpdateAddressEnd:(i:ITransportLine)=>void,isDragging:boolean}) => {
+const SortableItem = ({isDragging, data, showTimePicker, handleCancelOrder, handleUpdateAddressEnd, handleUpdateAddressStart }: {data:ITransportLine,showTimePicker:(i:ITransportLine)=>void,handleCancelOrder:(i:ITransportLine)=>void,handleUpdateAddressEnd:(i:ITransportLine)=>void,handleUpdateAddressStart:(i:ITransportLine)=>void,isDragging:boolean}) => {
     const {
       attributes,
       listeners,
@@ -992,7 +1054,8 @@ const SortableItem = ({isDragging, data, showTimePicker, handleCancelOrder, hand
             data={data} 
             showTimePicker={showTimePicker} 
             handleCancelOrder={handleCancelOrder}
-            handleUpdateAddressEnd={handleUpdateAddressEnd} />
+            handleUpdateAddressEnd={handleUpdateAddressEnd}
+            handleUpdateAddressStart={handleUpdateAddressStart} />
       </div>
     );
   };
