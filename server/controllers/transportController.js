@@ -185,7 +185,7 @@ export const transportCtrl = {
 
       // Tách nội dung QR theo dấu phẩy để hỗ trợ nhiều mã stock picking
       const pickingNames = qr_content
-        .split(",")
+        .split("|")
         .map((name) => name.trim())
         .filter((name) => name.length > 0);
 
