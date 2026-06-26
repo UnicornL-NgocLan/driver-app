@@ -475,7 +475,7 @@ const Home = () => {
             });
     
             const dateTime = dayjs(`${date.format('YYYY-MM-DD')} ${time.format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
-            const substractedTime = moment(dateTime).subtract(7,'hours').format('YYYY-MM-DD HH:mm:ss');
+            const substractedTime = moment(dateTime).subtract(7,'hours').subtract(1,'minutes').format('YYYY-MM-DD HH:mm:ss');
             if (open) {
                 setLoading(true);
                 await app.patch(`/api/update-sea-transport-line`,{
