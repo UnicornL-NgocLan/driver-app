@@ -1,4 +1,5 @@
 import { get } from "mongoose";
+import axios from "axios";
 import {
   getAllActiveTransport,
   getAllReadyTransport,
@@ -21,6 +22,8 @@ import {
   getTransportById,
   getTransportLineByTransportAndPicking,
   checkActiveTransportLineForPicking,
+  getTransportLineDetailsById,
+  getSeaDriversByIds,
 } from "../utils/getOdooUserData.js";
 import {
   updateActualEndDate,
@@ -120,6 +123,79 @@ export const transportCtrl = {
       }
 
       await doneTransportLine(req.odoo, id);
+
+      try {
+        const lineDetails = await getTransportLineDetailsById(req.odoo, id);
+        if (lineDetails && lineDetails.length > 0) {
+          const line = lineDetails[0];
+          
+          const pickingName = line.picking_id ? line.picking_id[1] : '';
+          const partnerName = line.partner_id ? line.partner_id[1] : '';
+          const transportId = line.transport_id ? line.transport_id[0] : null;
+          let driverNames = '';
+
+          if (transportId) {
+            const transportData = await getTransportById(req.odoo, transportId);
+            if (transportData && transportData.length > 0) {
+              const driverIds = transportData[0].sea_driver_id || [];
+              if (driverIds.length > 0) {
+                const drivers = await getSeaDriversByIds(req.odoo, driverIds);
+                driverNames = drivers.map(d => d.name).join(', ');
+              }
+            }
+          }
+
+          const dateStr = line.date_end_actual ? line.date_end_actual : (date_end || '');
+          let formattedDate = dateStr;
+          if (dateStr && dateStr !== '') {
+            const parts = dateStr.split(/[- :]/);
+            if(parts.length >= 5) {
+              const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5] || 0));
+              const day = String(d.getDate()).padStart(2, '0');
+              const month = String(d.getMonth() + 1).padStart(2, '0');
+              const year = d.getFullYear();
+              const hour = String(d.getHours()).padStart(2, '0');
+              const min = String(d.getMinutes()).padStart(2, '0');
+              formattedDate = `${day}/${month}/${year} ${hour}:${min}`;
+            }
+          }
+
+          const telegramToken = process.env.TELEGRAM_DELIVERY_BOT_TOKEN;
+          const chatId = process.env.DELIVERY_BOT_CHAT_ID || process.env.DELIVERT_BOT_CHAT_ID;
+          
+          if (telegramToken && chatId) {
+            const text = `🚚 <b>KẾT QUẢ GIAO HÀNG</b>\n\n📦 <b>Đơn hàng:</b> ${pickingName}\n👤 <b>Khách hàng:</b> ${partnerName}\n🙋 <b>Tài xế:</b> ${driverNames}\n\n🕒 <b>Thời gian:</b> ${formattedDate}\n📍 <b>Địa điểm:</b> ${line.address_end || ''}`;
+            
+            await axios.post(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
+              chat_id: chatId,
+              parse_mode: 'HTML',
+              text: text
+            });
+            
+            try {
+              const imageRecords = await getTransportLineImages(req.odoo, id);
+              if (imageRecords && imageRecords.length > 0) {
+                const mediaArray = imageRecords.filter(img => img.image_url).map(img => ({
+                  type: 'photo',
+                  media: img.image_url
+                }));
+
+                if (mediaArray.length > 0) {
+                  await axios.post(`https://api.telegram.org/bot${telegramToken}/sendMediaGroup`, {
+                    chat_id: chatId,
+                    media: mediaArray
+                  });
+                }
+              }
+            } catch (mediaError) {
+              console.log("Lỗi gửi media group telegram: ", mediaError);
+            }
+          }
+        }
+      } catch (tgError) {
+        console.log("Lỗi gửi tin nhắn telegram: ", tgError);
+      }
+
       res.status(200).json({ data: "Cập nhật thành công!" });
     } catch (error) {
       console.log(error);

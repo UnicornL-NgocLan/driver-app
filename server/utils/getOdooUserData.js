@@ -423,3 +423,33 @@ export async function checkActiveTransportLineForPicking(odoo, pickingId,transpo
     });
   });
 }
+
+export async function getTransportLineDetailsById(odoo, line_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(line_id)]]);
+    inParams.push(["id", "picking_id", "partner_id", "transport_id", "date_end_actual", "address_end"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line", "search_read", params, (err, assets) => {
+      if (err) reject(err);
+      else resolve(assets);
+    });
+  });
+}
+
+export async function getSeaDriversByIds(odoo, ids) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "in", ids]]);
+    inParams.push(["id", "name"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.driver", "search_read", params, (err, assets) => {
+      if (err) reject(err);
+      else resolve(assets);
+    });
+  });
+}
