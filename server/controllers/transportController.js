@@ -151,6 +151,7 @@ export const transportCtrl = {
             const parts = dateStr.split(/[- :]/);
             if(parts.length >= 5) {
               const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5] || 0));
+              d.setHours(d.getHours() + 7);
               const day = String(d.getDate()).padStart(2, '0');
               const month = String(d.getMonth() + 1).padStart(2, '0');
               const year = d.getFullYear();
