@@ -123,6 +123,7 @@ export const transportCtrl = {
       }
 
       await doneTransportLine(req.odoo, id);
+      res.status(200).json({ data: "Cập nhật thành công!" });
 
       try {
         const lineDetails = await getTransportLineDetailsById(req.odoo, id);
@@ -196,8 +197,6 @@ export const transportCtrl = {
       } catch (tgError) {
         console.log("Lỗi gửi tin nhắn telegram: ", tgError);
       }
-
-      res.status(200).json({ data: "Cập nhật thành công!" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ msg: error.message });
