@@ -27,5 +27,6 @@ router.get("/get-fuel-log-list", authenticateUser, transportCtrl.getFuelLogList)
 router.post("/add-vehicle-fuel-log", authenticateUser, transportCtrl.createFuelLogLine);
 router.delete("/delete-vehicle-fuel-log/:id", authenticateUser, transportCtrl.deleteFuelLogLine);
 router.get("/get-transport-line-images", authenticateUser, transportCtrl.getTransportLineImages);
+router.post("/add-external-transport-lines-via-qr", authenticateUser, otherUserAuthorize, transportCtrl.addExternalTransportLines);
 
 export default router.stack;

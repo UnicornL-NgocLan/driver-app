@@ -453,3 +453,48 @@ export async function getSeaDriversByIds(odoo, ids) {
     });
   });
 }
+
+export async function getStockPickingByName(odoo, name) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["name", "=", name]]);
+    inParams.push(["id", "name", "partner_id", "location_dest_id","location_id"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.picking", "search_read", params, (err, pickings) => {
+      if (err) reject(err);
+      else resolve(pickings);
+    });
+  });
+}
+
+export async function getWarehouseById(odoo, warehouseId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(warehouseId)]]);
+    inParams.push(["id", "partner_id", "is_consignment_warehouse"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.warehouse", "search_read", params, (err, res) => {
+      if (err) reject(err);
+      else resolve(res);
+    });
+  });
+}
+
+export async function getPartnerById(odoo, partnerId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(partnerId)]]);
+    inParams.push(["id", "street"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("res.partner", "search_read", params, (err, res) => {
+      if (err) reject(err);
+      else resolve(res);
+    });
+  });
+}

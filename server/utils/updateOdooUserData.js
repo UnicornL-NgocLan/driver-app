@@ -187,3 +187,18 @@ export async function addPickingToTransport(odoo, transportId, pickingIdsArray) 
   });
 }
 
+export async function createSeaTransportLine(odoo, data) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push(data);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line", "create", params, function (err, recordId) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(recordId);
+      }
+    });
+  });
+}

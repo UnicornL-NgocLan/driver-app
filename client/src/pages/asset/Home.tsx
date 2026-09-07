@@ -207,7 +207,11 @@ const Home = () => {
         setOpenScanner(false);
         try {
             setLoading(true);
-            const { data } = await app.post("/api/add-picking-by-qr", {
+            let url = "/api/add-picking-by-qr";
+            if (auth && auth.company_id && auth.company_id[0] === 11) {
+                url = "/api/add-external-transport-lines-via-qr";
+            }
+            const { data } = await app.post(url, {
                 qr_content: result,
                 transport_id: selectedTransport?.id
             });

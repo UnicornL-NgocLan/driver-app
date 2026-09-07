@@ -24,6 +24,9 @@ import {
   checkActiveTransportLineForPicking,
   getTransportLineDetailsById,
   getSeaDriversByIds,
+  getStockPickingByName,
+  getWarehouseById,
+  getPartnerById,
 } from "../utils/getOdooUserData.js";
 import {
   updateActualEndDate,
@@ -37,6 +40,7 @@ import {
   createTransportLineImage,
   startTransport,
   addPickingToTransport,
+  createSeaTransportLine,
 } from "../utils/updateOdooUserData.js";
 
 export const transportCtrl = {
@@ -376,7 +380,7 @@ export const transportCtrl = {
   getAllVehicles: async (req, res) => {
     try {
       const { company_id } = req.query;
-      const data = await getAllVehicles(req.odoo, company_id);
+      const data = await getAllVehicles(req.logistic_user, company_id);
       res.status(200).json({ data });
     } catch (error) {
       console.log(error);
@@ -546,4 +550,122 @@ export const transportCtrl = {
       res.status(500).json({ msg: error.message });
     }
   },
+
+  addExternalTransportLines: async (req, res) => {
+    try {
+     const { qr_content, transport_id } = req.body;
+      const company_id = req.user[0].company_id[0];
+
+      // Tách nội dung QR theo dấu phẩy để hỗ trợ nhiều mã stock picking
+      const pickingNames = qr_content
+        .split("|")
+        .map((name) => name.trim())
+        .filter((name) => name.length > 0);
+
+      if (pickingNames.length === 0) {
+        return res.status(400).json({ msg: "Nội dung QR không hợp lệ." });
+      }
+
+      const successList = [];
+      const errorList = [];
+
+      for(let i=0; i<pickingNames.length; i++) {
+        const pickingName = pickingNames[i];
+        try {
+          const picking = await getStockPickingByName(req.logistic_user, pickingName);
+          if (!picking || picking.length === 0) {
+            errorList.push(`${pickingName}: Không tìm thấy`);
+            continue;
+          }
+          const pick = picking[0];
+          let dia_chi_xuat_phat = "";
+          let dia_chi_dich = "";
+
+          // Xử lý địa chỉ xuất phát
+          if (pick.location_id) {
+            const loc = await getLocationWarehouses(req.logistic_user, [pick.location_id[0]]);
+            if (loc && loc.length > 0 && loc[0].warehouse_id) {
+              const warehouse = await getWarehouseById(req.logistic_user, loc[0].warehouse_id[0]);
+              if (warehouse && warehouse.length > 0) {
+                if (warehouse[0].is_consignment_warehouse && pick.partner_id) {
+                  const partner = await getPartnerById(req.logistic_user, pick.partner_id[0]);
+                  if (partner && partner.length > 0) dia_chi_xuat_phat = partner[0].street;
+                } else if (warehouse[0].partner_id) {
+                  const partner = await getPartnerById(req.logistic_user, warehouse[0].partner_id[0]);
+                  if (partner && partner.length > 0) dia_chi_xuat_phat = partner[0].street;
+                }
+              }
+            } else if (pick.partner_id) {
+              const partner = await getPartnerById(req.logistic_user, pick.partner_id[0]);
+              if (partner && partner.length > 0) dia_chi_xuat_phat = partner[0].street;
+            }
+          }
+
+          // Xử lý địa chỉ đích
+          if (pick.location_dest_id) {
+            const locDest = await getLocationWarehouses(req.logistic_user, [pick.location_dest_id[0]]);
+            if (locDest && locDest.length > 0 && locDest[0].warehouse_id) {
+              const warehouse = await getWarehouseById(req.logistic_user, locDest[0].warehouse_id[0]);
+              if (warehouse && warehouse.length > 0) {
+                if (warehouse[0].is_consignment_warehouse && pick.partner_id) {
+                  const partner = await getPartnerById(req.logistic_user, pick.partner_id[0]);
+                  if (partner && partner.length > 0) dia_chi_dich = partner[0].street;
+                } else if (warehouse[0].partner_id) {
+                  const partner = await getPartnerById(req.logistic_user, warehouse[0].partner_id[0]);
+                  if (partner && partner.length > 0) dia_chi_dich = partner[0].street;
+                }
+              }
+            } else if (pick.partner_id) {
+              const partner = await getPartnerById(req.logistic_user, pick.partner_id[0]);
+              if (partner && partner.length > 0) dia_chi_dich = partner[0].street;
+            }
+          }
+
+          console.log("dia_chi_xuat_phat", dia_chi_xuat_phat);
+          console.log("dia_chi_dich", dia_chi_dich);
+
+          const transportRes = await getTransportById(req.odoo, transport_id);
+
+          const expectedDate = new Date();
+          expectedDate.setHours(expectedDate.getHours() + 1);
+          const date_end_expected = expectedDate.toISOString().replace('T', ' ').substring(0, 19);
+
+          await createSeaTransportLine(req.odoo, {
+            internal_transportation: false,
+            product_id: 167882,
+            transport_id: parseInt(transport_id),
+            partner_id: 18166,
+            pricelist_id: 2,
+            warehouse_id: 20,
+            product_uom_qty: 1,
+            address_start: dia_chi_xuat_phat,
+            address_end: dia_chi_dich,
+            date_end_expected: date_end_expected,
+            note: `Đơn hàng phiếu xuất nhập kho ${pick.name} của DNG - Bên liên quan: ${pick.partner_id?.[1]}`
+          });
+
+          successList.push(pickingName);
+        } catch (innerError) {
+          console.log(`Lỗi xử lý picking ${pickingName}:`, innerError);
+          errorList.push(`${pickingName}: ${innerError.message}`);
+        }
+      }
+
+      if (successList.length === 0 && errorList.length > 0) {
+        return res.status(400).json({
+          msg: `Không thêm được đơn hàng nào.\n${errorList.join("\n")}`,
+        });
+      }
+
+      let msg = `Đã thêm thành công ${successList.length} đơn hàng.`;
+      if (errorList.length > 0) {
+        msg += `\nLỗi (${errorList.length}):\n${errorList.join("\n")}`;
+      }
+
+      res.status(200).json({ msg, successCount: successList.length, errorCount: errorList.length });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  } 
 };

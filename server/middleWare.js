@@ -72,7 +72,7 @@ export const otherUserAuthorize = async (req, res, next) => {
     const isConnected = await Promise.all([uid]);
     if (isConnected.includes(undefined))
       return res.status(403).json({ msg: "Kết nối với Odoo gặp trục trặc. Xin liên hệ với nhà phát triển" });
-    req.odoo = odoo;
+    req.logistic_user = odoo;
     return next();
   } catch (err) {
     res.status(500).json({ msg: err.message });
