@@ -59,7 +59,7 @@ export const transportCtrl = {
       console.log(error);
       res.status(500).json({ msg: error.message });
     }
-                                                                                                                                                                                                                                                                                                                          
+
   },
 
   getReadyTransport: async (req, res) => {
@@ -133,7 +133,7 @@ export const transportCtrl = {
         const lineDetails = await getTransportLineDetailsById(req.odoo, id);
         if (lineDetails && lineDetails.length > 0) {
           const line = lineDetails[0];
-          
+
           const pickingName = line.picking_id ? line.picking_id[1] : '';
           const partnerName = line.partner_id ? line.partner_id[1] : '';
           const transportId = line.transport_id ? line.transport_id[0] : null;
@@ -154,7 +154,7 @@ export const transportCtrl = {
           let formattedDate = dateStr;
           if (dateStr && dateStr !== '') {
             const parts = dateStr.split(/[- :]/);
-            if(parts.length >= 5) {
+            if (parts.length >= 5) {
               const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4], parts[5] || 0));
               d.setHours(d.getHours() + 7);
               const day = String(d.getDate()).padStart(2, '0');
@@ -168,16 +168,16 @@ export const transportCtrl = {
 
           const telegramToken = process.env.TELEGRAM_DELIVERY_BOT_TOKEN;
           const chatId = process.env.DELIVERY_BOT_CHAT_ID || process.env.DELIVERT_BOT_CHAT_ID;
-          
+
           if (telegramToken && chatId) {
             const text = `🚚 <b>KẾT QUẢ GIAO HÀNG</b>\n\n📦 <b>Đơn hàng:</b> ${pickingName}\n👤 <b>Khách hàng:</b> ${partnerName}\n🙋 <b>Tài xế:</b> ${driverNames}\n\n🕒 <b>Thời gian:</b> ${formattedDate}\n📍 <b>Địa điểm:</b> ${line.address_end || ''}`;
-            
+
             await axios.post(`https://api.telegram.org/bot${telegramToken}/sendMessage`, {
               chat_id: chatId,
               parse_mode: 'HTML',
               text: text
             });
-            
+
             try {
               const imageRecords = await getTransportLineImages(req.odoo, id);
               if (imageRecords && imageRecords.length > 0) {
@@ -553,7 +553,7 @@ export const transportCtrl = {
 
   addExternalTransportLines: async (req, res) => {
     try {
-     const { qr_content, transport_id } = req.body;
+      const { qr_content, transport_id } = req.body;
       const company_id = req.user[0].company_id[0];
 
       // Tách nội dung QR theo dấu phẩy để hỗ trợ nhiều mã stock picking
@@ -569,7 +569,7 @@ export const transportCtrl = {
       const successList = [];
       const errorList = [];
 
-      for(let i=0; i<pickingNames.length; i++) {
+      for (let i = 0; i < pickingNames.length; i++) {
         const pickingName = pickingNames[i];
         try {
           const picking = await getStockPickingByName(req.logistic_user, pickingName);
@@ -632,7 +632,7 @@ export const transportCtrl = {
 
           await createSeaTransportLine(req.odoo, {
             internal_transportation: false,
-            product_id: 167882,
+            product_id: 167884,
             transport_id: parseInt(transport_id),
             partner_id: 18166,
             pricelist_id: 2,
@@ -667,5 +667,5 @@ export const transportCtrl = {
       console.log(error);
       res.status(500).json({ msg: error.message });
     }
-  } 
+  }
 };
