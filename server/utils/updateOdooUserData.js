@@ -187,3 +187,62 @@ export async function addPickingToTransport(odoo, transportId, pickingIdsArray) 
   });
 }
 
+export async function createSeaTransportLine(odoo, data) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push(data);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport.line", "create", params, function (err, recordId) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(recordId);
+      }
+    });
+  });
+}
+
+export async function createSeaTransport(odoo, data) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push(data);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.transport", "create", params, function (err, recordId) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(recordId);
+      }
+    });
+  });
+}
+
+export async function confirmSeaTransport(odoo, uid) {
+  return new Promise((resolve, reject) => {
+    let params = [];
+    params.push([parseInt(uid)]);
+    odoo.execute_kw("sea.transport", "confirm", params, function (err, user) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(user);
+      }
+    });
+  });
+}
+
+export async function cancelSeaTransport(odoo, uid) {
+  return new Promise((resolve, reject) => {
+    let params = [];
+    params.push([parseInt(uid)]);
+    odoo.execute_kw("sea.transport", "write", [[[parseInt(uid)], {state: "cancel"}]], function (err, result) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(result);
+      }
+    });
+  });
+}

@@ -101,7 +101,7 @@ export async function getAllTransportLine(odoo, id, getAll = false) {
       ["transport_id", "=", parseInt(id)],
       ["state", "in", condition],
     ]);
-    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note", "picking_id"]);
+    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note", "picking_id", "origin"]);
     inParams.push(0);
     const params = [];
     params.push(inParams);
@@ -450,6 +450,102 @@ export async function getSeaDriversByIds(odoo, ids) {
     odoo.execute_kw("sea.driver", "search_read", params, (err, assets) => {
       if (err) reject(err);
       else resolve(assets);
+    });
+  });
+}
+
+export async function getStockPickingByName(odoo, name) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["name", "=", name]]);
+    inParams.push(["id", "name", "partner_id", "location_dest_id","location_id"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.picking", "search_read", params, (err, pickings) => {
+      if (err) reject(err);
+      else resolve(pickings);
+    });
+  });
+}
+
+export async function getWarehouseById(odoo, warehouseId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(warehouseId)]]);
+    inParams.push(["id", "partner_id", "is_consignment_warehouse"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.warehouse", "search_read", params, (err, res) => {
+      if (err) reject(err);
+      else resolve(res);
+    });
+  });
+}
+
+export async function getPartnerById(odoo, partnerId) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["id", "=", parseInt(partnerId)]]);
+    inParams.push(["id", "street"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("res.partner", "search_read", params, (err, res) => {
+      if (err) reject(err);
+      else resolve(res);
+    });
+  });
+}
+
+export async function getAvailableVehicles(odoo) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([
+      ["active", "=", true],
+      ["is_on_mission", "=", false],
+    ]);
+    inParams.push(["id", "license_plate", "brand_id", "is_on_mission"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("fleet.vehicle", "search_read", params, (err, assets) => {
+      if (err) reject(err);
+      else resolve(assets);
+    });
+  });
+}
+
+export async function getAvailableSeaDrivers(odoo, company_id) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([
+      ["company_id", "=", parseInt(company_id)],
+      ["is_on_mission", "=", false],
+    ]);
+    inParams.push(["id", "name", "partner_id", "is_on_mission"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("sea.driver", "search_read", params, (err, assets) => {
+      if (err) reject(err);
+      else resolve(assets);
+    });
+  });
+}
+
+export async function getAllActiveWarehouses(odoo) {
+  return new Promise((resolve, reject) => {
+    const inParams = [];
+    inParams.push([["active", "=", true]]);
+    inParams.push(["id", "name"]);
+    inParams.push(0);
+    const params = [];
+    params.push(inParams);
+    odoo.execute_kw("stock.warehouse", "search_read", params, (err, warehouses) => {
+      if (err) reject(err);
+      else resolve(warehouses);
     });
   });
 }
