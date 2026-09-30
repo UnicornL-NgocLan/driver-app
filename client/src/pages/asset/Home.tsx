@@ -15,7 +15,7 @@ import yellow from '../../images/circle.png'
 import Skeleton from 'react-loading-skeleton'
 import 'react-loading-skeleton/dist/skeleton.css'
 import Empty from 'widgets/Empty'
-import { ConfigProvider, DatePicker, List, Modal, TimePicker, Tag, Button, Input } from 'antd'
+import { ConfigProvider, DatePicker, List, Modal, TimePicker, Tag, Button, Input, Select } from 'antd'
 import TransportLine from './components/TransportLine'
 import { ITransport, ITransportLine, IVehicle } from 'interface'
 import locale from 'antd/locale/vi_VN';
@@ -77,6 +77,15 @@ const Home = () => {
     const [driver,setDriver] = useState<number | null>(null);
     const [vehicleList,setVehicleList] = useState<IVehicle[]>([]);
     const [warningReminders,setWarningReminders] = useState([]);
+
+    // Create Transport Modal states
+    const [openCreateTransport, setOpenCreateTransport] = useState(false);
+    const [createTransportLoading, setCreateTransportLoading] = useState(false);
+    const [availableVehicles, setAvailableVehicles] = useState<any[]>([]);
+    const [availableDrivers, setAvailableDrivers] = useState<any[]>([]);
+    const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null);
+    const [selectedDriverIds, setSelectedDriverIds] = useState<number[]>([]);
+    const [mandatoryDriverId, setMandatoryDriverId] = useState<number | null>(null);
 
     dayjs.locale('vi');
 
@@ -207,15 +216,38 @@ const Home = () => {
         setOpenScanner(false);
         try {
             setLoading(true);
-            let url = "/api/add-picking-by-qr";
-            if (auth && auth.company_id && auth.company_id[0] === 11) {
-                url = "/api/add-external-transport-lines-via-qr";
+            
+            let data: any;
+            let firstApiFailed = false;
+
+            try {
+                const response = await app.post("/api/add-picking-by-qr", {
+                    qr_content: result,
+                    transport_id: selectedTransport?.id
+                });
+                data = response.data;
+                if (data.successCount === 0) {
+                    firstApiFailed = true;
+                }
+            } catch (err) {
+                firstApiFailed = true;
+                if (!(auth && auth.company_id && auth.company_id[0] === 11)) {
+                    throw err; // Nếu không thuộc company 11 thì báo lỗi luôn
+                }
             }
-            const { data } = await app.post(url, {
-                qr_content: result,
-                transport_id: selectedTransport?.id
-            });
-            alert(data.msg);
+
+            if (firstApiFailed && auth && auth.company_id && auth.company_id[0] === 11) {
+                const response = await app.post("/api/add-external-transport-lines-via-qr", {
+                    qr_content: result,
+                    transport_id: selectedTransport?.id
+                });
+                data = response.data;
+            }
+
+            if (data) {
+                alert(data.msg);
+            }
+            
             if(selectedTransport){
                 await handleFetchTransportLines(selectedTransport.id);
             }
@@ -257,6 +289,26 @@ const Home = () => {
         }
     }
 
+    const handleCancelSeaTransport = async (transportId: number) => {
+        try {
+            setLoading(true);
+            await app.patch("/api/cancel-sea-transport", { id: transportId });
+            alert("Hủy chuyến xe thành công!");
+            setSelectedTransport(null);
+            setActiveTransportLines([]);
+            if (driver) {
+                await handleFetchReadyTransports(driver);
+            } else {
+                await handleFetchReadyTransports();
+            }
+        } catch (error: any) {
+            const message = getErrorMessage(error);
+            alert(message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     const handleFetchAllDrivers = async () => {
         try {
             const {data} = await app.get(`/api/get-all-sea-driver?company_id=${auth.company_id[0]}`);
@@ -269,6 +321,70 @@ const Home = () => {
             setFetchData(false);
         }
     }
+
+    const handleOpenCreateTransport = async () => {
+        try {
+            setCreateTransportLoading(true);
+            setOpenCreateTransport(true);
+            setSelectedVehicleId(null);
+            setSelectedDriverIds([]);
+            setMandatoryDriverId(null);
+
+            const {data} = await app.get(`/api/get-create-transport-data?company_id=${auth.company_id[0]}`);
+            if (data?.data) {
+                setAvailableVehicles(data.data.vehicles || []);
+                const allDrivers = data.data.drivers || [];
+                setAvailableDrivers(allDrivers);
+
+                // Tìm tài xế mandatory: partner_id của driver = partner_id[0] của user hiện tại
+                if (auth?.partner_id) {
+                    const currentPartnerId = Array.isArray(auth.partner_id) ? auth.partner_id[0] : auth.partner_id;
+                    const mandatoryDriver = allDrivers.find((d: any) => {
+                        const dPartnerId = Array.isArray(d.partner_id) ? d.partner_id[0] : d.partner_id;
+                        return dPartnerId === currentPartnerId;
+                    });
+                    if (mandatoryDriver && mandatoryDriver.is_on_mission === false) {
+                        setMandatoryDriverId(mandatoryDriver.id);
+                        setSelectedDriverIds([mandatoryDriver.id]);
+                    }
+                }
+            }
+        } catch (error: any) {
+            const message = getErrorMessage(error);
+            alert(message);
+            setOpenCreateTransport(false);
+        } finally {
+            setCreateTransportLoading(false);
+        }
+    };
+
+    const handleCreateTransport = async () => {
+        try {
+            if (!selectedVehicleId) {
+                alert('Vui lòng chọn phương tiện!');
+                return;
+            }
+            if (selectedDriverIds.length === 0) {
+                alert('Vui lòng chọn ít nhất một tài xế!');
+                return;
+            }
+            setCreateTransportLoading(true);
+            await app.post('/api/create-sea-transport', {
+                vehicle_id: selectedVehicleId,
+                sea_driver_ids: selectedDriverIds,
+            });
+            alert('Tạo chuyến xe thành công!');
+            setOpenCreateTransport(false);
+            setLoading(true);
+            // Refresh danh sách chuyến xe
+            await handleFetchReadyTransports(driver || undefined);
+        } catch (error: any) {
+            const message = getErrorMessage(error);
+            alert(message);
+        } finally {
+            setCreateTransportLoading(false);
+        }
+    };
 
     const handleFetchTransport = async () => {
         try {
@@ -732,20 +848,35 @@ const Home = () => {
                         )}
                     </div>
                     {selectedTransport.vehicle_id && <span style={{fontSize:14,display:'block',marginTop:4}}><span style={{fontWeight:600}}>Phương tiện: </span>{selectedTransport.vehicle_id[1]}</span>}
-                    {selectedTransport.state === 'ready' && !readyTransports.some(t => t.state === 'start') && 
-                        <Button 
-                            type="primary" 
-                            style={{marginTop: 8, background: myColor.buttonColor}}
-                            onClick={() => {
-                                if (window.confirm("Bạn có chắc chắn muốn bắt đầu giao hàng?")) {
-                                    handleStartTransport(selectedTransport.id);
-                                }
-                            }}
-                            block
-                        >
-                            Bắt đầu giao hàng
-                        </Button>
-                    }
+                    {selectedTransport.state === 'ready' && (
+                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                            {!readyTransports.some(t => t.state === 'start') && (
+                                <Button 
+                                    type="primary" 
+                                    style={{ background: myColor.buttonColor, flex: 1 }}
+                                    onClick={() => {
+                                        if (window.confirm("Bạn có chắc chắn muốn bắt đầu giao hàng?")) {
+                                            handleStartTransport(selectedTransport.id);
+                                        }
+                                    }}
+                                >
+                                    Bắt đầu giao hàng
+                                </Button>
+                            )}
+                            <Button 
+                                danger
+                                type="primary"
+                                style={{ flex: 1 }}
+                                onClick={() => {
+                                    if (window.confirm("Bạn có thực sự muốn hủy chuyến xe?")) {
+                                        handleCancelSeaTransport(selectedTransport.id);
+                                    }
+                                }}
+                            >
+                                Hủy
+                            </Button>
+                        </div>
+                    )}
                 </div>
                 <DndContext 
                 sensors={sensors}
@@ -778,6 +909,17 @@ const Home = () => {
             defaultIndex === -1 && !selectedTransport && readyTransports.length > 0
             ?
             <div style={{padding:'1rem 1rem 55px'}}>
+                {!readyTransports.some(t => t.state === 'start') && (
+                    <div style={{display:'flex', justifyContent:'flex-end', marginBottom:12}}>
+                        <Button
+                            type="primary"
+                            style={{background: myColor.buttonColor}}
+                            onClick={handleOpenCreateTransport}
+                        >
+                            + Tạo chuyến xe
+                        </Button>
+                    </div>
+                )}
                 <List
                     itemLayout="horizontal"
                     dataSource={readyTransports}
@@ -856,7 +998,20 @@ const Home = () => {
                 />
             </div>
             :
-            <div style={{padding:'1rem 0'}}><Empty/></div>
+            <div style={{padding:'1rem 0'}}>
+                {defaultIndex === -1 && !selectedTransport && !readyTransports.some(t => t.state === 'start') && (
+                    <div style={{display:'flex', justifyContent:'flex-end', padding:'0 1rem', marginBottom:12}}>
+                        <Button
+                            type="primary"
+                            style={{background: myColor.buttonColor}}
+                            onClick={handleOpenCreateTransport}
+                        >
+                            + Tạo chuyến xe
+                        </Button>
+                    </div>
+                )}
+                <Empty/>
+            </div>
         }
         {open && <Modal
             title="Xác nhận giao hàng"
@@ -1026,6 +1181,73 @@ const Home = () => {
             onCancel={() => setOpenScanner(false)}
             onScan={handleScanQR}
         />
+
+        {openCreateTransport && <Modal
+            title="Tạo chuyến xe"
+            open={openCreateTransport}
+            okButtonProps={{style:{background: myColor.buttonColor}}}
+            cancelText="Hủy"
+            cancelButtonProps={{disabled: createTransportLoading}}
+            closable={!createTransportLoading}
+            centered
+            maskClosable={false}
+            okText="Tạo"
+            onOk={handleCreateTransport}
+            confirmLoading={createTransportLoading}
+            onCancel={() => { if (!createTransportLoading) setOpenCreateTransport(false); }}
+        >
+            <div style={{display:'flex', flexDirection:'column', gap:16, marginTop:12}}>
+                <div>
+                    <span style={{fontWeight:600, display:'block', marginBottom:6}}>Phương tiện:</span>
+                    <Select
+                        style={{width:'100%'}}
+                        placeholder="Chọn phương tiện"
+                        value={selectedVehicleId}
+                        onChange={(val) => setSelectedVehicleId(val)}
+                        loading={createTransportLoading}
+                        options={availableVehicles.map((v: any) => ({
+                            label: `${v.license_plate}${v.brand_id ? ' - ' + v.brand_id[1] : ''}`,
+                            value: v.id,
+                        }))}
+                    />
+                </div>
+                <div>
+                    <span style={{fontWeight:600, display:'block', marginBottom:6}}>Tài xế:</span>
+                    <Select
+                        mode="multiple"
+                        style={{width:'100%'}}
+                        placeholder="Chọn tài xế"
+                        value={selectedDriverIds}
+                        onChange={(vals: number[]) => {
+                            // Không cho phép bỏ chọn mandatory driver
+                            if (mandatoryDriverId && !vals.includes(mandatoryDriverId)) {
+                                return;
+                            }
+                            setSelectedDriverIds(vals);
+                        }}
+                        loading={createTransportLoading}
+                        options={availableDrivers.map((d: any) => ({
+                            label: d.name + (d.id === mandatoryDriverId ? ' (bắt buộc)' : ''),
+                            value: d.id,
+                            disabled: d.id === mandatoryDriverId,
+                        }))}
+                        tagRender={(props) => {
+                            const isMandatory = props.value === mandatoryDriverId;
+                            return (
+                                <Tag
+                                    color={isMandatory ? 'blue' : undefined}
+                                    closable={!isMandatory}
+                                    onClose={isMandatory ? undefined : props.onClose}
+                                    style={{marginRight:3}}
+                                >
+                                    {props.label}
+                                </Tag>
+                            );
+                        }}
+                    />
+                </div>
+            </div>
+        </Modal>}
 
         <BottomNavigator id={defaultIndex} handleChangeIndex = {handleChangeIndex}/>
     </div>

@@ -27,6 +27,9 @@ import {
   getStockPickingByName,
   getWarehouseById,
   getPartnerById,
+  getAvailableVehicles,
+  getAvailableSeaDrivers,
+  getAllActiveWarehouses,
 } from "../utils/getOdooUserData.js";
 import {
   updateActualEndDate,
@@ -41,8 +44,10 @@ import {
   startTransport,
   addPickingToTransport,
   createSeaTransportLine,
+  createSeaTransport,
+  confirmSeaTransport,
+  cancelSeaTransport,
 } from "../utils/updateOdooUserData.js";
-
 export const transportCtrl = {
   getActiveTransport: async (req, res) => {
     try {
@@ -252,6 +257,27 @@ export const transportCtrl = {
       if (!id) return res.status(400).json({ msg: "Vui lòng cung cấp ID đơn hàng!" });
       await startTransport(req.odoo, id);
       res.status(200).json({ data: "Bắt đầu giao hàng thành công!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
+  handleCancelSeaTransport: async (req, res) => {
+    try {
+      const { id } = req.body;
+      if (!id) return res.status(400).json({ msg: "Vui lòng cung cấp ID chuyến xe!" });
+      
+      const lines = await getAllTransportLine(req.odoo, id, true);
+      if (lines && lines.length > 0) {
+        const linesToCancel = lines.filter((line) => line.state !== "cancel");
+        for (const line of linesToCancel) {
+          await cancelTransportLine(req.odoo, line.id);
+        }
+      }
+      
+      await cancelSeaTransport(req.odoo, id);
+      res.status(200).json({ msg: "Hủy chuyến xe thành công!" });
     } catch (error) {
       console.log(error);
       res.status(500).json({ msg: error.message });
@@ -632,7 +658,7 @@ export const transportCtrl = {
 
           await createSeaTransportLine(req.odoo, {
             internal_transportation: false,
-            product_id: 167884,
+            product_id: 42205,
             transport_id: parseInt(transport_id),
             partner_id: 18166,
             pricelist_id: 2,
@@ -641,7 +667,7 @@ export const transportCtrl = {
             address_start: dia_chi_xuat_phat,
             address_end: dia_chi_dich,
             date_end_expected: date_end_expected,
-            note: `Đơn hàng phiếu xuất nhập kho ${pick.name} của DNG - Bên liên quan: ${pick.partner_id?.[1]}`
+            origin: pick.name
           });
 
           successList.push(pickingName);
@@ -667,5 +693,101 @@ export const transportCtrl = {
       console.log(error);
       res.status(500).json({ msg: error.message });
     }
-  }
+  },
+
+  getCreateTransportData: async (req, res) => {
+    try {
+      const { company_id } = req.query;
+      if (!company_id) return res.status(400).json({ msg: "Vui lòng cung cấp công ty!" });
+      const [vehicles, drivers] = await Promise.all([
+        getAvailableVehicles(req.odoo),
+        getAvailableSeaDrivers(req.odoo, company_id),
+      ]);
+      res.status(200).json({ data: { vehicles, drivers } });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
+  createSeaTransport: async (req, res) => {
+    try {
+      const { vehicle_id, sea_driver_ids } = req.body;
+      if (!vehicle_id) return res.status(400).json({ msg: "Vui lòng chọn phương tiện!" });
+      if (!sea_driver_ids || sea_driver_ids.length === 0)
+        return res.status(400).json({ msg: "Vui lòng chọn ít nhất một tài xế!" });
+
+      const warehouses = await getAllActiveWarehouses(req.odoo);
+      const warehouseIds = warehouses.map((w) => w.id);
+
+      const transportId = await createSeaTransport(req.odoo, {
+        vehicle_id: parseInt(vehicle_id),
+        sea_driver_id: [[6, 0, sea_driver_ids.map((id) => parseInt(id))]],
+        warehouse_id: [[6, 0, warehouseIds]],
+      });
+
+      // Gọi hàm confirm ngay sau khi tạo
+      await confirmSeaTransport(req.odoo, transportId);
+
+      res.status(200).json({ data: transportId, msg: "Tạo chuyến xe thành công!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
+
+  addTransportLineImages: async (req, res) => {
+    try {
+      const { transport_line_id, images } = req.body;
+
+      if (!transport_line_id) {
+        return res.status(400).json({ msg: "Vui lòng cung cấp transport line!" });
+      }
+      if (!images || images.length === 0) {
+        return res.status(400).json({ msg: "Vui lòng cung cấp ít nhất 1 hình ảnh!" });
+      }
+
+      // Lấy thông tin transport line để kiểm tra date_end_actual
+      const lineDetails = await getTransportLineDetailsById(req.odoo, transport_line_id);
+      if (!lineDetails || lineDetails.length === 0) {
+        return res.status(404).json({ msg: "Không tìm thấy đơn hàng!" });
+      }
+
+      const line = lineDetails[0];
+      if (!line.date_end_actual) {
+        return res.status(400).json({ msg: "Đơn hàng chưa hoàn thành, không thể thêm ảnh bổ sung!" });
+      }
+
+      // Kiểm tra thời gian 12 tiếng
+      // date_end_actual từ Odoo được lưu ở UTC
+      // Cộng 7 giờ để chuyển sang giờ Việt Nam (UTC+7)
+      const dateEndActualUTC = new Date(line.date_end_actual.replace(' ', 'T') + 'Z');
+      const dateEndActualVN = new Date(dateEndActualUTC.getTime() + 7 * 60 * 60 * 1000);
+      
+      // Lấy thời gian hiện tại theo giờ Việt Nam (UTC+7)
+      const nowUTC = new Date();
+      const nowVN = new Date(nowUTC.getTime() + 7 * 60 * 60 * 1000);
+
+      const diffMs = nowVN.getTime() - dateEndActualVN.getTime();
+      const diffHours = diffMs / (1000 * 60 * 60);
+
+      if (diffHours < 0 || diffHours > 12) {
+        return res.status(400).json({ msg: "Quá thời gian được phép cập nhật!" });
+      }
+
+      // Tạo record ảnh cho từng URL
+      for (const imgUrl of images) {
+        await createTransportLineImage(req.odoo, {
+          transport_line_id: parseInt(transport_line_id),
+          image_url: imgUrl,
+        });
+      }
+
+      res.status(200).json({ msg: "Thêm ảnh bổ sung thành công!" });
+    } catch (error) {
+      console.log(error);
+      res.status(500).json({ msg: error.message });
+    }
+  },
 };
+

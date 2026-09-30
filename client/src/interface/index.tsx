@@ -16,6 +16,7 @@ export interface ITransportLine {
     transport_id:[],
     date_end_actual:string,
     note:string,
+    origin:string,
 }
 
 export interface ITransport {
