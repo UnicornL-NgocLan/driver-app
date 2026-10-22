@@ -30,7 +30,7 @@ const BottomNavigator = ({id,handleChangeIndex}:{id:number,handleChangeIndex:(i:
             <BsFillFuelPumpFill style={{fontSize:20}}/>
             <span style={{fontSize:14,fontWeight:`${checkForActive(0) ? 700 : 500}`}}>Nhiên liệu</span>
         </div> */}
-        <div 
+        {/* <div 
         onClick={() => handleChangeIndex(2)}
         style={{display:'flex',gap:1,flexDirection:'column',alignItems:'center',flex:1, color:`${checkForActive(2) ? myColor.buttonColor : myColor.secondaryColor}`}}>
             <BiSolidBellRing style={{fontSize:20}}/>
@@ -41,7 +41,7 @@ const BottomNavigator = ({id,handleChangeIndex}:{id:number,handleChangeIndex:(i:
         style={{display:'flex',gap:1,flexDirection:'column',alignItems:'center',flex:1, color:`${checkForActive(3) ? myColor.buttonColor : myColor.secondaryColor}`}}>
             <AiFillDashboard style={{fontSize:20}}/>
             <span style={{fontSize:14,fontWeight:`${checkForActive(3) ? 700 : 500}`}}>Đồng hồ</span>
-        </div>
+        </div> */}
     </div>
   )
 }
