@@ -101,7 +101,7 @@ export async function getAllTransportLine(odoo, id, getAll = false) {
       ["transport_id", "=", parseInt(id)],
       ["state", "in", condition],
     ]);
-    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note", "picking_id", "origin"]);
+    inParams.push(["id", "name", "state", "item_type", "partner_id", "address_start", "address_end", "transport_id", "date_end_actual", "note", "picking_id", "origin", "customer_ref"]);
     inParams.push(0);
     const params = [];
     params.push(inParams);

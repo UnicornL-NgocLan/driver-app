@@ -647,9 +647,6 @@ export const transportCtrl = {
             }
           }
 
-          console.log("dia_chi_xuat_phat", dia_chi_xuat_phat);
-          console.log("dia_chi_dich", dia_chi_dich);
-
           const transportRes = await getTransportById(req.odoo, transport_id);
 
           const expectedDate = new Date();
@@ -667,7 +664,8 @@ export const transportCtrl = {
             address_start: dia_chi_xuat_phat,
             address_end: dia_chi_dich,
             date_end_expected: date_end_expected,
-            origin: pick.name
+            origin: pick.name,
+            customer_ref: Array.isArray(pick.partner_id) ? pick.partner_id[1] : ""
           });
 
           successList.push(pickingName);
