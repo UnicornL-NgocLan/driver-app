@@ -17,6 +17,7 @@ export interface ITransportLine {
     date_end_actual:string,
     note:string,
     origin:string,
+    customer_ref?: string,
 }
 
 export interface ITransport {

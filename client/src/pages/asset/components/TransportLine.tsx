@@ -19,6 +19,9 @@ const TransportLine = ({isDragging, data,showTimePicker,handleCancelOrder,handle
                     {data.origin && <span style={{fontSize:14}}>
                         <span style={{fontWeight:500}}>Chứng từ gốc: </span><span>{data.origin}</span>
                     </span>}
+                    {data.customer_ref && <span style={{fontSize:14}}>
+                        <span style={{fontWeight:500}}>Khách hàng: </span><span>{data.customer_ref}</span>
+                    </span>}
                     {data.item_type && <span style={{fontSize:14}}>
                         <span style={{fontWeight:500}}>Hàng hóa: </span><span>{data.item_type}</span>
                     </span>}
