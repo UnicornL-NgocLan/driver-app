@@ -168,7 +168,8 @@ const Home = () => {
     const handleFetchReadyTransports = async (driver_id?:number) => {
         try {
             if(auth && auth.partner_id){
-                const {data} = await app.get(`/api/get-ready-transport?id=${auth.driver || driver_id}&company_id=${auth.company_id[0]}`);
+                const targetDriverId = driver_id || driver || auth.driver;
+                const {data} = await app.get(`/api/get-ready-transport?id=${targetDriverId}&company_id=${auth.company_id[0]}`);
                 if(data?.data && data?.data.length > 0){
                     setReadyTransports(data.data);
                 }else {
@@ -376,8 +377,10 @@ const Home = () => {
             alert('Tạo chuyến xe thành công!');
             setOpenCreateTransport(false);
             setLoading(true);
+
             // Refresh danh sách chuyến xe
-            await handleFetchReadyTransports(driver || undefined);
+            const targetDriverId = driver || auth?.driver;
+            await handleFetchReadyTransports(targetDriverId || undefined);
         } catch (error: any) {
             const message = getErrorMessage(error);
             alert(message);
@@ -499,69 +502,119 @@ const Home = () => {
     }   
 
     const upLoadBase64ToDropBox = async (dataUrl:string,accessToken:string) =>{
-        try {
-            const base64Data = dataUrl.split(",")[1];
-            const fileName = generateFileName(dataUrl);
-            
-            const binaryString = window.atob(base64Data);
-            const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            const buffer = bytes.buffer;
-            
-            const response = await fetch(
-                "https://content.dropboxapi.com/2/files/upload",
-                {
-                    method: "POST",
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                        "Content-Type": "application/octet-stream",
-                        "Dropbox-API-Arg": JSON.stringify({
-                            path: `/images/${fileName}`,
-                            mode: "add",
-                            autorename: true
-                        })
-                    },
-                    body: buffer
-                }
-            );
-
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            const message = getErrorMessage(error);
-            alert(error);
-            setFetchData(false);
+        const base64Data = dataUrl.split(",")[1];
+        const fileName = generateFileName(dataUrl);
+        
+        const binaryString = window.atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
         }
+        const buffer = bytes.buffer;
+        
+        const response = await fetch(
+            "https://content.dropboxapi.com/2/files/upload",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/octet-stream",
+                    "Dropbox-API-Arg": JSON.stringify({
+                        path: `/images/${fileName}`,
+                        mode: "add",
+                        autorename: true
+                    })
+                },
+                body: buffer
+            }
+        );
+
+        const data = await response.json();
+        if (!response.ok || data.error_summary) {
+            throw new Error(data.error_summary || "Lỗi tải ảnh lên Dropbox");
+        }
+        return data;
     }
 
     const handleShareLink = async (file_path:string,accessToken:string) => {
-        try {
-            const response = await fetch(
-                "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
-                {
+        const response = await fetch(
+            "https://api.dropboxapi.com/2/sharing/create_shared_link_with_settings",
+            {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    path: file_path,
+                    settings: {
+                        requested_visibility: "public"
+                    }
+                })
+            }
+        );
+        const data = await response.json();
+        if (!response.ok || !data?.url) {
+            if (data?.error?.['.tag'] === 'shared_link_already_exists') {
+                const listResponse = await fetch("https://api.dropboxapi.com/2/sharing/list_shared_links", {
                     method: "POST",
                     headers: {
                         Authorization: `Bearer ${accessToken}`,
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({
-                        path: file_path,
-                        settings: {
-                            requested_visibility: "public"
-                        }
-                    })
+                    body: JSON.stringify({ path: file_path, direct_only: true })
+                });
+                const listData = await listResponse.json();
+                if (listData?.links && listData.links.length > 0) {
+                    return listData.links[0];
                 }
-            );
-            const data = await response.json();
-            return data;
-        } catch (error) {
-            const message = getErrorMessage(error);
-            alert(error);
-            setFetchData(false);
+            }
+            throw new Error(data?.error_summary || "Lỗi tạo đường dẫn ảnh Dropbox");
         }
+        return data;
     }   
+
+    const runBackgroundUploadImages = async (lineId: number, lineName: string, images: string[]) => {
+        try {
+            const dropBoxAccessToken = await handleGetDropBoxAccessToken();
+            if (!dropBoxAccessToken) {
+                throw new Error("Không lấy được access token của Dropbox");
+            }
+
+            const list_of_images_path = await Promise.all(
+                images.map(async (image: string) => {
+                    return await upLoadBase64ToDropBox(image, dropBoxAccessToken);
+                })
+            );
+
+            const shared_links = await Promise.all(
+                list_of_images_path.map(async (item: any) => {
+                    return await handleShareLink(item.path_display, dropBoxAccessToken);
+                })
+            );
+
+            const directImageURLs = shared_links
+                .filter((link: any) => link && link.url)
+                .map((link: any) => {
+                    return link.url.replace("dl=0", "raw=1");
+                });
+
+            if (directImageURLs.length > 0) {
+                await app.post('/api/add-transport-line-images', {
+                    transport_line_id: lineId,
+                    images: directImageURLs
+                });
+            }
+        } catch (error: any) {
+            console.error("Lỗi xử lý ngầm ảnh Dropbox:", error);
+            const message = getErrorMessage(error);
+            Modal.error({
+                title: "Lỗi lưu ảnh đính kèm",
+                content: `Đơn hàng "${lineName || lineId}" đã xác nhận giao thành công, nhưng gặp lỗi khi lưu ảnh lên Dropbox/hệ thống: ${message}. Bạn có thể vào mục Lịch sử đơn hàng để kiểm tra và bổ sung ảnh!`,
+                okText: "Đã hiểu",
+            });
+        }
+    };
 
     const handleConfirmDeliveryTime = async () => {
         try {
@@ -574,42 +627,37 @@ const Home = () => {
                 return;
             }
 
-            setConfirmLoading(true);
+            const currentLine = open;
+            if (!currentLine) return;
 
-            const dropBoxAccessToken = await handleGetDropBoxAccessToken();
-            if(!dropBoxAccessToken){
-                alert("Không lấy được access token của Dropbox ")
-            }
-
-            const list_of_images_path = await Promise.all(capturedImages.map(async (image:string) => {
-                return await upLoadBase64ToDropBox(image,dropBoxAccessToken);
-            }));
-
-            const shared_links = await Promise.all(list_of_images_path.map(async (item:any) => {
-                return await handleShareLink(item.path_display,dropBoxAccessToken);
-            }));
-            
-            // Turn shared link to direct image URL
-            const directImageURLs = shared_links.map((link:any) => {
-                return link.url.replace("dl=0", "raw=1");
-            });
-    
+            const imagesToUpload = [...capturedImages];
             const dateTime = dayjs(`${date.format('YYYY-MM-DD')} ${time.format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
             const substractedTime = moment(dateTime).subtract(7,'hours').subtract(1,'minutes').format('YYYY-MM-DD HH:mm:ss');
-            if (open) {
-                setLoading(true);
-                await app.patch(`/api/update-sea-transport-line`,{
-                    id:open.id,
-                    date_end:substractedTime,
-                    images: directImageURLs
-                });
-                if(selectedTransport){
-                    await handleFetchTransportLines(selectedTransport.id);
-                }
+
+            // Đóng popup xác nhận và dọn dẹp state ngay lập tức để người dùng không phải chờ
+            setOpen(false);
+            setCapturedImages([]);
+            setLoading(true);
+
+            // 1. Cập nhật hoàn thành giao hàng ngay lập tức
+            await app.patch(`/api/update-sea-transport-line`, {
+                id: currentLine.id,
+                date_end: substractedTime,
+                images: []
+            });
+
+            if (selectedTransport) {
+                await handleFetchTransportLines(selectedTransport.id);
             }
+            setLoading(false);
+
+            // 2. Chạy ngầm việc upload ảnh lên Dropbox và tạo record hình ảnh
+            runBackgroundUploadImages(currentLine.id, currentLine.name, imagesToUpload);
+
         } catch (error) {
             const message = getErrorMessage(error);
             alert(message); 
+            setLoading(false);
         } finally {
             setConfirmLoading(false);
             setOpen(false);
