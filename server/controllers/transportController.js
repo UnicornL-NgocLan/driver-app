@@ -711,6 +711,7 @@ export const transportCtrl = {
   createSeaTransport: async (req, res) => {
     try {
       const { vehicle_id, sea_driver_ids } = req.body;
+      const company_id = req.user[0].company_id[0];
       if (!vehicle_id) return res.status(400).json({ msg: "Vui lòng chọn phương tiện!" });
       if (!sea_driver_ids || sea_driver_ids.length === 0)
         return res.status(400).json({ msg: "Vui lòng chọn ít nhất một tài xế!" });
@@ -722,6 +723,7 @@ export const transportCtrl = {
         vehicle_id: parseInt(vehicle_id),
         sea_driver_id: [[6, 0, sea_driver_ids.map((id) => parseInt(id))]],
         warehouse_id: [[6, 0, warehouseIds]],
+        company_id: parseInt(company_id),
       });
 
       // Gọi hàm confirm ngay sau khi tạo
@@ -782,6 +784,24 @@ export const transportCtrl = {
       }
 
       res.status(200).json({ msg: "Thêm ảnh bổ sung thành công!" });
+
+      // Gửi media group telegram nếu có cấu hình
+      try {
+        const telegramToken = process.env.TELEGRAM_DELIVERY_BOT_TOKEN;
+        const chatId = process.env.DELIVERY_BOT_CHAT_ID || process.env.DELIVERT_BOT_CHAT_ID;
+        if (telegramToken && chatId && images.length > 0) {
+          const mediaArray = images.map(imgUrl => ({
+            type: 'photo',
+            media: imgUrl
+          }));
+          await axios.post(`https://api.telegram.org/bot${telegramToken}/sendMediaGroup`, {
+            chat_id: chatId,
+            media: mediaArray
+          });
+        }
+      } catch (tgError) {
+        console.log("Lỗi gửi ảnh qua telegram: ", tgError);
+      }
     } catch (error) {
       console.log(error);
       res.status(500).json({ msg: error.message });
