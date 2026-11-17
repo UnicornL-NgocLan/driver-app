@@ -627,37 +627,43 @@ const Home = () => {
                 return;
             }
 
-            const currentLine = open;
-            if (!currentLine) return;
+            setConfirmLoading(true);
 
-            const imagesToUpload = [...capturedImages];
+            const dropBoxAccessToken = await handleGetDropBoxAccessToken();
+            if(!dropBoxAccessToken){
+                alert("Không lấy được access token của Dropbox");
+                return;
+            }
+
+            const list_of_images_path = await Promise.all(capturedImages.map(async (image: string) => {
+                return await upLoadBase64ToDropBox(image, dropBoxAccessToken);
+            }));
+
+            const shared_links = await Promise.all(list_of_images_path.map(async (item: any) => {
+                return await handleShareLink(item.path_display, dropBoxAccessToken);
+            }));
+
+            // Turn shared link to direct image URL
+            const directImageURLs = shared_links
+                .filter((link: any) => link && link.url)
+                .map((link: any) => link.url.replace("dl=0", "raw=1"));
+
             const dateTime = dayjs(`${date.format('YYYY-MM-DD')} ${time.format('HH:mm:ss')}`).format('YYYY-MM-DD HH:mm:ss');
             const substractedTime = moment(dateTime).subtract(7,'hours').subtract(1,'minutes').format('YYYY-MM-DD HH:mm:ss');
-
-            // Đóng popup xác nhận và dọn dẹp state ngay lập tức để người dùng không phải chờ
-            setOpen(false);
-            setCapturedImages([]);
-            setLoading(true);
-
-            // 1. Cập nhật hoàn thành giao hàng ngay lập tức
-            await app.patch(`/api/update-sea-transport-line`, {
-                id: currentLine.id,
-                date_end: substractedTime,
-                images: []
-            });
-
-            if (selectedTransport) {
-                await handleFetchTransportLines(selectedTransport.id);
+            if (open) {
+                setLoading(true);
+                await app.patch(`/api/update-sea-transport-line`, {
+                    id: open.id,
+                    date_end: substractedTime,
+                    images: directImageURLs
+                });
+                if(selectedTransport){
+                    await handleFetchTransportLines(selectedTransport.id);
+                }
             }
-            setLoading(false);
-
-            // 2. Chạy ngầm việc upload ảnh lên Dropbox và tạo record hình ảnh
-            runBackgroundUploadImages(currentLine.id, currentLine.name, imagesToUpload);
-
         } catch (error) {
             const message = getErrorMessage(error);
-            alert(message); 
-            setLoading(false);
+            alert(message);
         } finally {
             setConfirmLoading(false);
             setOpen(false);
